@@ -19,7 +19,7 @@ export type MoodKey =
   | 'violet'
   | 'gray';
 
-export type MembershipStatus = 'pending' | 'active';
+export type MembershipStatus = 'pending' | 'active' | 'left';
 
 export type PublicScheduleSummary = {
   id: string;
