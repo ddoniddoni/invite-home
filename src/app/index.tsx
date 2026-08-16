@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { HouseScene } from '@/components/house/house-scene';
 import { NoteComposer } from '@/components/house/note-composer';
 import { ResidentDetailModal } from '@/components/house/resident-detail-modal';
+import { BottomTabBar } from '@/components/navigation/bottom-tab-bar';
 import { StatusEditor } from '@/components/status/status-editor';
 import {
   getHouseLayout,
@@ -85,7 +86,11 @@ export default function IndexRoute() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+      >
         <View style={styles.header}>
           <Text style={styles.eyebrow}>LOCAL HOUSE SCENE</Text>
           <Text style={styles.title}>{fixtureHouse.name}</Text>
@@ -147,6 +152,7 @@ export default function IndexRoute() {
           <Text style={styles.myRoomButtonArrow}>→</Text>
         </Pressable>
       </ScrollView>
+      <BottomTabBar />
       <Modal
         animationType="none"
         onRequestClose={() => setIsStatusEditorVisible(false)}
@@ -206,6 +212,9 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     padding: spacing.lg,
     paddingBottom: spacing.xxl,
+  },
+  scroll: {
+    flex: 1,
   },
   header: {
     gap: spacing.xs,

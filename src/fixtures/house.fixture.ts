@@ -11,6 +11,13 @@ export const fixtureHouse = {
   isOwner: true,
 };
 
+export const fixtureWaitingRoom = {
+  houseName: fixtureHouse.name,
+  houseType: fixtureHouse.houseType,
+  ownerNickname: '나린',
+  moveInAvailableAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+};
+
 export const fixtureMembers: readonly HouseWindowMember[] = [
   {
     id: fixtureCurrentUserId,
