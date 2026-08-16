@@ -3,12 +3,16 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HouseScene } from '@/components/house/house-scene';
+import { NoteComposer } from '@/components/house/note-composer';
+import { ResidentDetailModal } from '@/components/house/resident-detail-modal';
 import { StatusEditor } from '@/components/status/status-editor';
 import {
   getHouseLayout,
   houseTypeLabels,
 } from '@/features/houses/config/house-layouts';
 import type { HouseType, HouseWindowMember } from '@/features/houses/types';
+import { noteTypeLabels } from '@/features/notes/presentation';
+import type { NoteFormValues } from '@/features/notes/note.schema';
 import type { StatusFormValues } from '@/features/status/status.schema';
 import {
   fixtureCurrentUserId,
@@ -26,6 +30,8 @@ export default function IndexRoute() {
   const [selection, setSelection] = useState('창문을 눌러 친구의 오늘을 살펴보세요.');
   const [currentStatus, setCurrentStatus] = useState<StatusFormValues>(fixtureCurrentStatus);
   const [isStatusEditorVisible, setIsStatusEditorVisible] = useState(false);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const [noteRecipientId, setNoteRecipientId] = useState<string | null>(null);
   const capacity = getHouseLayout(houseType).slots.length;
   const currentMember = fixtureMembers.find((member) => member.id === fixtureCurrentUserId);
   const members: readonly HouseWindowMember[] = fixtureMembers.map((member) =>
@@ -38,14 +44,15 @@ export default function IndexRoute() {
         }
       : member,
   );
+  const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
+  const noteRecipient = members.find((member) => member.id === noteRecipientId) ?? null;
 
   if (!currentMember) {
     return null;
   }
 
   const onPressMember = (memberId: string) => {
-    const member = fixtureMembers.find((fixtureMember) => fixtureMember.id === memberId);
-    setSelection(member ? `${member.nickname}의 방을 선택했어요.` : '입주민을 찾을 수 없어요.');
+    setSelectedMemberId(memberId);
   };
 
   const onPressMyRoom = () => {
@@ -60,6 +67,20 @@ export default function IndexRoute() {
     setCurrentStatus(nextStatus);
     setSelection(`${nextStatus.statusMessage || '내 상태'}를 창문에 반영했어요.`);
     setIsStatusEditorVisible(false);
+  };
+
+  const onPressNote = (memberId: string) => {
+    setSelectedMemberId(null);
+    setNoteRecipientId(memberId);
+  };
+
+  const onSendNote = async (value: NoteFormValues) => {
+    if (!noteRecipient) {
+      return;
+    }
+
+    setSelection(`${noteRecipient.nickname}에게 ${noteTypeLabels[value.type]}를 보냈어요.`);
+    setNoteRecipientId(null);
   };
 
   return (
@@ -141,6 +162,35 @@ export default function IndexRoute() {
               onSave={onSaveStatus}
             />
           </SafeAreaView>
+        ) : null}
+      </Modal>
+      <Modal
+        animationType="none"
+        onRequestClose={() => setSelectedMemberId(null)}
+        presentationStyle="pageSheet"
+        visible={selectedMember !== null}
+      >
+        {selectedMember ? (
+          <ResidentDetailModal
+            member={selectedMember}
+            onClose={() => setSelectedMemberId(null)}
+            onPressNote={onPressNote}
+          />
+        ) : null}
+      </Modal>
+      <Modal
+        animationType="none"
+        onRequestClose={() => setNoteRecipientId(null)}
+        presentationStyle="pageSheet"
+        visible={noteRecipient !== null}
+      >
+        {noteRecipient ? (
+          <NoteComposer
+            currentUserId={fixtureCurrentUserId}
+            onClose={() => setNoteRecipientId(null)}
+            onSend={onSendNote}
+            recipient={noteRecipient}
+          />
         ) : null}
       </Modal>
     </SafeAreaView>

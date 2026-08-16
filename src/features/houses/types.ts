@@ -21,6 +21,12 @@ export type MoodKey =
 
 export type MembershipStatus = 'pending' | 'active';
 
+export type PublicScheduleSummary = {
+  id: string;
+  title: string;
+  timeLabel: string;
+};
+
 export type HouseWindowMember = {
   id: string;
   roomSlot: number;
@@ -28,7 +34,10 @@ export type HouseWindowMember = {
   status: MembershipStatus;
   lightOn: boolean;
   moodKey: MoodKey | null;
+  moodLabel: string | null;
   activityState: ActivityState;
+  statusMessage: string | null;
+  publicTodaySchedules: readonly PublicScheduleSummary[];
   hasUnreadNoteForMe: boolean;
 };
 
