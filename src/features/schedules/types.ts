@@ -16,8 +16,13 @@ export type RepeatingSchedulePreview = {
   priority: number;
 };
 
+export type TodayScheduleVisibility = 'house' | 'private';
+
 export type TodaySchedulePreview = {
   id: string;
   title: string;
+  startTime: string;
+  endTime: string;
   timeLabel: string;
+  visibility: TodayScheduleVisibility;
 };

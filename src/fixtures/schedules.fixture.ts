@@ -33,6 +33,9 @@ export const fixtureTodaySchedules: readonly TodaySchedulePreview[] = [
   {
     id: 'fixture-today-walk',
     title: '저녁 산책',
+    startTime: '20:30',
+    endTime: '21:10',
     timeLabel: '20:30–21:10',
+    visibility: 'house',
   },
 ];

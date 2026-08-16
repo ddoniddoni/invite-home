@@ -1,4 +1,4 @@
-import type { Weekday } from './types';
+import type { TodayScheduleVisibility, Weekday } from './types';
 
 export const weekdayLabels: Record<Weekday, string> = {
   0: '일',
@@ -32,3 +32,8 @@ export function formatWeekdays(days: readonly Weekday[]): string {
 }
 
 export const weekdayOrder = weekdaysInOrder;
+
+export const todayScheduleVisibilityLabels: Record<TodayScheduleVisibility, string> = {
+  house: '우리 집에 공개',
+  private: '나만 보기',
+};

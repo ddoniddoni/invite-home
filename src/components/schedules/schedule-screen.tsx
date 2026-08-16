@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { activityStateLabels } from '@/features/status/presentation';
-import { formatWeekdays } from '@/features/schedules/presentation';
+import { formatWeekdays, todayScheduleVisibilityLabels } from '@/features/schedules/presentation';
 import type { ScheduleFormValues } from '@/features/schedules/schedule.schema';
+import type { TodayScheduleFormValues } from '@/features/schedules/today-schedule.schema';
 import type { RepeatingSchedulePreview, TodaySchedulePreview } from '@/features/schedules/types';
 import { colors, radius, spacing } from '@/theme/tokens';
 import { fontSize, fontWeight, lineHeight } from '@/theme/typography';
 
 import { ScheduleComposer } from './schedule-composer';
+import { TodayScheduleComposer } from './today-schedule-composer';
+
+type Composer = 'repeat' | 'today' | null;
 
 export type ScheduleScreenProps = {
   repeatingSchedules: readonly RepeatingSchedulePreview[];
@@ -17,7 +21,8 @@ export type ScheduleScreenProps = {
 
 export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleScreenProps) {
   const [schedules, setSchedules] = useState<readonly RepeatingSchedulePreview[]>(repeatingSchedules);
-  const [isComposerVisible, setIsComposerVisible] = useState(false);
+  const [todayItems, setTodayItems] = useState<readonly TodaySchedulePreview[]>(todaySchedules);
+  const [composer, setComposer] = useState<Composer>(null);
   const canCreateSchedule = schedules.length < 20;
 
   const toggleSchedule = (scheduleId: string) => {
@@ -52,7 +57,22 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
         },
       ];
     });
-    setIsComposerVisible(false);
+    setComposer(null);
+  };
+
+  const createTodaySchedule = async (value: TodayScheduleFormValues) => {
+    setTodayItems((currentSchedules) => [
+      ...currentSchedules,
+      {
+        id: `fixture-today-${currentSchedules.length + 1}`,
+        title: value.title,
+        startTime: value.startTime,
+        endTime: value.endTime,
+        timeLabel: `${value.startTime}–${value.endTime}`,
+        visibility: value.visibility,
+      },
+    ]);
+    setComposer(null);
   };
 
   return (
@@ -69,7 +89,7 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
             accessibilityRole="button"
             accessibilityState={{ disabled: !canCreateSchedule }}
             disabled={!canCreateSchedule}
-            onPress={() => setIsComposerVisible(true)}
+            onPress={() => setComposer('repeat')}
             style={({ pressed }) => [
               styles.addButton,
               !canCreateSchedule ? styles.addButtonDisabled : null,
@@ -108,12 +128,27 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>오늘 일정</Text>
+          <View style={styles.sectionHeading}>
+            <Text style={styles.sectionTitle}>오늘 일정</Text>
+            <Pressable
+              accessibilityLabel="오늘 일정 추가"
+              accessibilityRole="button"
+              onPress={() => setComposer('today')}
+              style={({ pressed }) => [styles.todayAddButton, pressed ? styles.pressed : null]}
+            >
+              <Text style={styles.todayAddButtonText}>일정 추가</Text>
+            </Pressable>
+          </View>
           <View style={styles.todayList}>
-            {todaySchedules.map((schedule) => (
+            {todayItems.map((schedule) => (
               <View key={schedule.id} style={styles.todayRow}>
-                <Text style={styles.todayTime}>{schedule.timeLabel}</Text>
-                <Text style={styles.todayTitle}>{schedule.title}</Text>
+                <View style={styles.todayCopy}>
+                  <Text style={styles.todayTime}>{schedule.timeLabel}</Text>
+                  <Text style={styles.todayTitle}>{schedule.title}</Text>
+                </View>
+                <Text accessibilityLabel={`${todayScheduleVisibilityLabels[schedule.visibility]} 일정`} style={styles.visibilityLabel}>
+                  {schedule.visibility === 'house' ? '우리 집' : '나만'}
+                </Text>
               </View>
             ))}
           </View>
@@ -121,13 +156,12 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
       </ScrollView>
       <Modal
         animationType="none"
-        onRequestClose={() => setIsComposerVisible(false)}
+        onRequestClose={() => setComposer(null)}
         presentationStyle="pageSheet"
-        visible={isComposerVisible}
+        visible={composer !== null}
       >
-        {isComposerVisible ? (
-          <ScheduleComposer onClose={() => setIsComposerVisible(false)} onSave={createSchedule} />
-        ) : null}
+        {composer === 'repeat' ? <ScheduleComposer onClose={() => setComposer(null)} onSave={createSchedule} /> : null}
+        {composer === 'today' ? <TodayScheduleComposer onClose={() => setComposer(null)} onSave={createTodaySchedule} /> : null}
       </Modal>
     </View>
   );
@@ -195,6 +229,11 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.sm,
   },
+  sectionHeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   sectionTitle: {
     color: colors.textPrimary,
     fontSize: fontSize.title,
@@ -253,10 +292,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   todayRow: {
+    alignItems: 'center',
     borderBottomColor: colors.border,
     borderBottomWidth: 1,
+    flexDirection: 'row',
     gap: spacing.xs,
     padding: spacing.md,
+  },
+  todayCopy: {
+    flex: 1,
+    gap: spacing.xs,
   },
   todayTime: {
     color: colors.success,
@@ -269,6 +314,27 @@ const styles = StyleSheet.create({
     fontSize: fontSize.body,
     fontWeight: fontWeight.medium,
     lineHeight: lineHeight.body,
+  },
+  todayAddButton: {
+    alignItems: 'center',
+    borderColor: colors.accentPlum,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
+  },
+  todayAddButtonText: {
+    color: colors.accentPlum,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.bold,
+    lineHeight: lineHeight.caption,
+  },
+  visibilityLabel: {
+    color: colors.accentPlum,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.bold,
+    lineHeight: lineHeight.caption,
   },
   pressed: {
     opacity: 0.74,
