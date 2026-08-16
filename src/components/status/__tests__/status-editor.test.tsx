@@ -35,7 +35,7 @@ describe('StatusEditor', () => {
     expect(screen.getByRole('tab', { name: '자동' }).props.accessibilityState).toEqual({
       selected: true,
     });
-    expect(screen.getByText('자동 모드에서는 다음 단계의 반복 스케줄 값을 사용해요.')).toBeTruthy();
+    expect(screen.getByText('자동 모드에서는 현재 반복 스케줄 값을 사용해요.')).toBeTruthy();
   });
 
   it('검증된 상태 값을 저장 콜백으로 전달한다', async () => {

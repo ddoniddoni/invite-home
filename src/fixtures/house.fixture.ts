@@ -7,6 +7,7 @@ export const fixtureHouse = {
   name: '한강이 보이는 우리집',
   houseType: 'apartment' as HouseType,
   capacity: 8,
+  timeZone: 'Asia/Seoul',
   timeOfDay: 'evening' as TimeOfDay,
   isOwner: true,
 };

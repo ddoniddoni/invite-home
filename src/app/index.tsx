@@ -14,34 +14,63 @@ import {
 import type { HouseType, HouseWindowMember } from '@/features/houses/types';
 import { noteTypeLabels } from '@/features/notes/presentation';
 import type { NoteFormValues } from '@/features/notes/note.schema';
+import { resolveManualUntil } from '@/features/status/manual-until';
 import type { StatusFormValues } from '@/features/status/status.schema';
+import { useEffectiveStatus } from '@/features/status/use-effective-status';
 import {
   fixtureCurrentUserId,
   fixtureCurrentStatus,
   fixtureHouse,
   fixtureMembers,
 } from '@/fixtures/house.fixture';
+import { fixtureStatusSchedules } from '@/fixtures/schedules.fixture';
 import { colors, radius, spacing } from '@/theme/tokens';
 import { fontSize, fontWeight, lineHeight } from '@/theme/typography';
 
 const houseTypes: readonly HouseType[] = ['apartment', 'villa', 'detached'];
+const fixtureStatusEvents = [] as const;
+
+type CurrentStatusState = {
+  values: StatusFormValues;
+  manualUntil: Date | null;
+};
 
 export default function IndexRoute() {
   const [houseType, setHouseType] = useState<HouseType>(fixtureHouse.houseType);
   const [selection, setSelection] = useState('창문을 눌러 친구의 오늘을 살펴보세요.');
-  const [currentStatus, setCurrentStatus] = useState<StatusFormValues>(fixtureCurrentStatus);
+  const [currentStatus, setCurrentStatus] = useState<CurrentStatusState>(() => ({
+    values: fixtureCurrentStatus,
+    manualUntil: resolveManualUntil(fixtureCurrentStatus.manualUntil, new Date(), fixtureHouse.timeZone),
+  }));
   const [isStatusEditorVisible, setIsStatusEditorVisible] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [noteRecipientId, setNoteRecipientId] = useState<string | null>(null);
   const capacity = getHouseLayout(houseType).slots.length;
   const currentMember = fixtureMembers.find((member) => member.id === fixtureCurrentUserId);
+  const effectiveStatus = useEffectiveStatus({
+    events: fixtureStatusEvents,
+    houseTimeZone: fixtureHouse.timeZone,
+    memberStatus: {
+      membershipStatus: currentMember?.status ?? 'left',
+      mode: currentStatus.values.mode,
+      activityState: currentStatus.values.activityState,
+      lightOn: currentStatus.values.lightOn,
+      moodKey: currentStatus.values.moodKey,
+      moodLabel: currentStatus.values.moodLabel || null,
+      statusMessage: currentStatus.values.statusMessage || null,
+      manualUntil: currentStatus.manualUntil,
+    },
+    schedules: fixtureStatusSchedules,
+  });
   const members: readonly HouseWindowMember[] = fixtureMembers.map((member) =>
     member.id === fixtureCurrentUserId
       ? {
           ...member,
-          activityState: currentStatus.activityState,
-          lightOn: currentStatus.lightOn,
-          moodKey: currentStatus.moodKey,
+          activityState: effectiveStatus.activityState,
+          lightOn: effectiveStatus.lightOn,
+          moodKey: effectiveStatus.moodKey,
+          moodLabel: effectiveStatus.moodLabel,
+          statusMessage: effectiveStatus.statusMessage,
         }
       : member,
   );
@@ -65,8 +94,15 @@ export default function IndexRoute() {
   };
 
   const onSaveStatus = (nextStatus: StatusFormValues) => {
-    setCurrentStatus(nextStatus);
-    setSelection(`${nextStatus.statusMessage || '내 상태'}를 창문에 반영했어요.`);
+    setCurrentStatus({
+      values: nextStatus,
+      manualUntil: resolveManualUntil(nextStatus.manualUntil, new Date(), fixtureHouse.timeZone),
+    });
+    setSelection(
+      nextStatus.mode === 'auto'
+        ? '자동 모드가 현재 반복 스케줄에 맞춰 창문을 바꿔요.'
+        : `${nextStatus.statusMessage || '내 상태'}를 창문에 반영했어요.`,
+    );
     setIsStatusEditorVisible(false);
   };
 
@@ -162,7 +198,7 @@ export default function IndexRoute() {
         {isStatusEditorVisible ? (
           <SafeAreaView style={styles.editorContainer}>
             <StatusEditor
-              initialValue={currentStatus}
+              initialValue={currentStatus.values}
               nickname={currentMember.nickname}
               onClose={() => setIsStatusEditorVisible(false)}
               onSave={onSaveStatus}

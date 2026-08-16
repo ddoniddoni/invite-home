@@ -155,7 +155,7 @@ export function StatusEditor({ initialValue, nickname, onClose, onSave }: Status
           />
           {isManualMode ? null : (
             <Text style={styles.helperText}>
-              자동 모드에서는 다음 단계의 반복 스케줄 값을 사용해요.
+              자동 모드에서는 현재 반복 스케줄 값을 사용해요.
             </Text>
           )}
         </View>
