@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "our-home",
+    "name": "우리집 거주할 사람?",
     "slug": "our-home",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -28,9 +28,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#F6F1E8"
         }
       ]
     ],
