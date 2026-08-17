@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import Svg, { Path, Rect } from 'react-native-svg';
 
 import { EmptyState } from '@/components/ui/empty-state';
+import type { RepeatingScheduleUpdater } from '@/features/schedules/local-schedule-store';
 import { activityStateLabels } from '@/features/status/presentation';
 import { formatWeekdays, todayScheduleVisibilityLabels } from '@/features/schedules/presentation';
 import type { ScheduleFormValues } from '@/features/schedules/schedule.schema';
@@ -25,6 +27,15 @@ type DeletionTarget =
   | { schedule: TodaySchedulePreview; type: 'today' }
   | null;
 
+function CalendarIcon({ color }: { color: string }) {
+  return (
+    <Svg accessible={false} height={20} viewBox="0 0 24 24" width={20}>
+      <Rect fill="none" height="15" rx="2" stroke={color} strokeWidth="1.7" width="15" x="4.5" y="5.5" />
+      <Path d="M8 3.5v4M16 3.5v4M4.5 10h15" fill="none" stroke={color} strokeLinecap="round" strokeWidth="1.7" />
+    </Svg>
+  );
+}
+
 function toScheduleFormValues(schedule: RepeatingSchedulePreview): ScheduleFormValues {
   return {
     label: schedule.title,
@@ -47,15 +58,17 @@ function toTodayScheduleFormValues(schedule: TodaySchedulePreview): TodaySchedul
 }
 
 export type ScheduleScreenProps = {
+  onRepeatingSchedulesChange?: (updater: RepeatingScheduleUpdater) => void;
   repeatingSchedules: readonly RepeatingSchedulePreview[];
   todaySchedules: readonly TodaySchedulePreview[];
 };
 
-export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleScreenProps) {
-  const [schedules, setSchedules] = useState<readonly RepeatingSchedulePreview[]>(repeatingSchedules);
+export function ScheduleScreen({ onRepeatingSchedulesChange, repeatingSchedules, todaySchedules }: ScheduleScreenProps) {
+  const [localSchedules, setLocalSchedules] = useState<readonly RepeatingSchedulePreview[]>(repeatingSchedules);
   const [todayItems, setTodayItems] = useState<readonly TodaySchedulePreview[]>(todaySchedules);
   const [composer, setComposer] = useState<Composer>(null);
   const [deletionTarget, setDeletionTarget] = useState<DeletionTarget>(null);
+  const schedules = onRepeatingSchedulesChange ? repeatingSchedules : localSchedules;
   const canCreateSchedule = schedules.length < 20;
   const canCreateTodaySchedule = todayItems.length < 100;
   const editingSchedule = composer?.type === 'repeat-edit'
@@ -65,8 +78,17 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
     ? todayItems.find((schedule) => schedule.id === composer.scheduleId) ?? null
     : null;
 
+  const updateSchedules = (updater: RepeatingScheduleUpdater) => {
+    if (onRepeatingSchedulesChange) {
+      onRepeatingSchedulesChange(updater);
+      return;
+    }
+
+    setLocalSchedules(updater);
+  };
+
   const toggleSchedule = (scheduleId: string) => {
-    setSchedules((currentSchedules) =>
+    updateSchedules((currentSchedules) =>
       currentSchedules.map((schedule) =>
         schedule.id === scheduleId ? { ...schedule, isEnabled: !schedule.isEnabled } : schedule,
       ),
@@ -74,7 +96,7 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
   };
 
   const createSchedule = async (value: ScheduleFormValues) => {
-    setSchedules((currentSchedules) => {
+    updateSchedules((currentSchedules) => {
       const priority = currentSchedules.reduce(
         (highestPriority, schedule) => Math.max(highestPriority, schedule.priority),
         0,
@@ -116,7 +138,7 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
   };
 
   const updateSchedule = async (scheduleId: string, value: ScheduleFormValues) => {
-    setSchedules((currentSchedules) =>
+    updateSchedules((currentSchedules) =>
       currentSchedules.map((schedule) =>
         schedule.id === scheduleId
           ? {
@@ -161,7 +183,7 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
     }
 
     if (deletionTarget.type === 'repeat') {
-      setSchedules((currentSchedules) =>
+      updateSchedules((currentSchedules) =>
         currentSchedules.filter((schedule) => schedule.id !== deletionTarget.schedule.id),
       );
     } else {
@@ -177,11 +199,10 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View style={styles.headerCopy}>
-            <Text style={styles.eyebrow}>YOUR RHYTHM</Text>
-            <Text accessibilityRole="header" style={styles.title}>스케줄</Text>
-            <Text style={styles.description}>반복되는 생활 리듬이 창문의 상태를 정해요.</Text>
+          <View style={styles.headerIcon}>
+            <CalendarIcon color={colors.textPrimary} />
           </View>
+          <Text accessibilityRole="header" style={styles.title}>스케줄</Text>
           <Pressable
             accessibilityLabel="반복 스케줄 추가"
             accessibilityRole="button"
@@ -194,18 +215,88 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
               pressed && canCreateSchedule ? styles.pressed : null,
             ]}
           >
-            <Text style={[styles.addButtonText, !canCreateSchedule ? styles.addButtonTextDisabled : null]}>추가</Text>
+            <Text style={[styles.addButtonText, !canCreateSchedule ? styles.addButtonTextDisabled : null]}>+</Text>
           </Pressable>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>반복 스케줄</Text>
-          <Text style={styles.sectionDescription}>겹치는 시간대는 우선순위 규칙에 따라 표시돼요.</Text>
+          <View style={styles.sectionHeading}>
+            <View>
+              <Text style={styles.sectionTitle}>오늘의 일정</Text>
+              <Text style={styles.sectionDescription}>약속은 필요한 만큼만, 가볍게 남겨요.</Text>
+            </View>
+            <Pressable
+              accessibilityLabel="오늘 일정 추가"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !canCreateTodaySchedule }}
+              disabled={!canCreateTodaySchedule}
+              onPress={() => setComposer({ type: 'today-create' })}
+              style={({ pressed }) => [
+                styles.todayAddButton,
+                !canCreateTodaySchedule ? styles.todayAddButtonDisabled : null,
+                pressed && canCreateTodaySchedule ? styles.pressed : null,
+              ]}
+            >
+              <Text style={[styles.todayAddButtonText, !canCreateTodaySchedule ? styles.todayAddButtonTextDisabled : null]}>
+                + 일정
+              </Text>
+            </Pressable>
+          </View>
+          {!canCreateTodaySchedule ? <Text style={styles.limitMessage}>오늘 일정은 최대 100개까지 만들 수 있어요.</Text> : null}
+          {todayItems.length === 0 ? (
+            <EmptyState
+              description="일정 추가로 오늘의 약속을 남겨 보세요."
+              title="오늘 일정이 없어요"
+            />
+          ) : (
+            <View style={styles.todayList}>
+              {todayItems.map((schedule) => (
+                <View key={schedule.id} style={styles.todayRow}>
+                  <View style={styles.todayCopy}>
+                    <Text style={styles.todayTime}>{schedule.timeLabel}</Text>
+                    <Text style={styles.todayTitle}>{schedule.title}</Text>
+                  </View>
+                  <View style={styles.todayActions}>
+                    <Text accessibilityLabel={`${todayScheduleVisibilityLabels[schedule.visibility]} 일정`} style={styles.visibilityLabel}>
+                      {schedule.visibility === 'house' ? '우리 집' : '나만'}
+                    </Text>
+                    <View style={styles.inlineActions}>
+                      <Pressable
+                        accessibilityLabel={`${schedule.title} 편집`}
+                        accessibilityRole="button"
+                        onPress={() => setComposer({ scheduleId: schedule.id, type: 'today-edit' })}
+                        style={({ pressed }) => [styles.todayEditButton, pressed ? styles.pressed : null]}
+                      >
+                        <Text style={styles.todayEditButtonText}>편집</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityLabel={`${schedule.title} 삭제`}
+                        accessibilityRole="button"
+                        onPress={() => setDeletionTarget({ schedule, type: 'today' })}
+                        style={({ pressed }) => [styles.deleteButton, pressed ? styles.pressed : null]}
+                      >
+                        <Text style={styles.deleteButtonText}>삭제</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeading}>
+            <View>
+              <Text style={styles.sectionTitle}>반복 규칙</Text>
+              <Text style={styles.sectionDescription}>이 시간대가 창문의 상태를 자동으로 바꿔요.</Text>
+            </View>
+          </View>
           {!canCreateSchedule ? <Text style={styles.limitMessage}>반복 스케줄은 최대 20개까지 만들 수 있어요.</Text> : null}
           {schedules.length === 0 ? (
             <EmptyState
-              description="추가 버튼으로 생활 리듬을 만들어 보세요."
-              title="반복 스케줄이 없어요"
+              description="오른쪽 위 추가 버튼으로 생활 리듬을 만들어 보세요."
+              title="반복 규칙이 없어요"
             />
           ) : (
             <View style={styles.scheduleList}>
@@ -232,74 +323,13 @@ export function ScheduleScreen({ repeatingSchedules, todaySchedules }: ScheduleS
                       accessibilityRole="switch"
                       onValueChange={() => toggleSchedule(schedule.id)}
                       thumbColor={colors.surface}
-                      trackColor={{ false: colors.border, true: colors.accentPlum }}
+                      trackColor={{ false: colors.border, true: colors.primary }}
                       value={schedule.isEnabled}
                     />
                     <Pressable
                       accessibilityLabel={`${schedule.title} 삭제`}
                       accessibilityRole="button"
                       onPress={() => setDeletionTarget({ schedule, type: 'repeat' })}
-                      style={({ pressed }) => [styles.deleteButton, pressed ? styles.pressed : null]}
-                    >
-                      <Text style={styles.deleteButtonText}>삭제</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeading}>
-            <Text style={styles.sectionTitle}>오늘 일정</Text>
-            <Pressable
-              accessibilityLabel="오늘 일정 추가"
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !canCreateTodaySchedule }}
-              disabled={!canCreateTodaySchedule}
-              onPress={() => setComposer({ type: 'today-create' })}
-              style={({ pressed }) => [
-                styles.todayAddButton,
-                !canCreateTodaySchedule ? styles.todayAddButtonDisabled : null,
-                pressed && canCreateTodaySchedule ? styles.pressed : null,
-              ]}
-            >
-              <Text style={[styles.todayAddButtonText, !canCreateTodaySchedule ? styles.todayAddButtonTextDisabled : null]}>
-                일정 추가
-              </Text>
-            </Pressable>
-          </View>
-          {!canCreateTodaySchedule ? <Text style={styles.limitMessage}>오늘 일정은 최대 100개까지 만들 수 있어요.</Text> : null}
-          {todayItems.length === 0 ? (
-            <EmptyState
-              description="일정 추가로 오늘의 약속을 남겨 보세요."
-              title="오늘 일정이 없어요"
-            />
-          ) : (
-            <View style={styles.todayList}>
-              {todayItems.map((schedule) => (
-                <View key={schedule.id} style={styles.todayRow}>
-                  <View style={styles.todayCopy}>
-                    <Text style={styles.todayTime}>{schedule.timeLabel}</Text>
-                    <Text style={styles.todayTitle}>{schedule.title}</Text>
-                  </View>
-                  <View style={styles.todayActions}>
-                    <Text accessibilityLabel={`${todayScheduleVisibilityLabels[schedule.visibility]} 일정`} style={styles.visibilityLabel}>
-                      {schedule.visibility === 'house' ? '우리 집' : '나만'}
-                    </Text>
-                    <Pressable
-                      accessibilityLabel={`${schedule.title} 편집`}
-                      accessibilityRole="button"
-                      onPress={() => setComposer({ scheduleId: schedule.id, type: 'today-edit' })}
-                      style={({ pressed }) => [styles.todayEditButton, pressed ? styles.pressed : null]}
-                    >
-                      <Text style={styles.todayEditButtonText}>편집</Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityLabel={`${schedule.title} 삭제`}
-                      accessibilityRole="button"
-                      onPress={() => setDeletionTarget({ schedule, type: 'today' })}
                       style={({ pressed }) => [styles.deleteButton, pressed ? styles.pressed : null]}
                     >
                       <Text style={styles.deleteButtonText}>삭제</Text>
@@ -388,60 +418,50 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: spacing.xl,
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
-  header: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: spacing.xs,
-    justifyContent: 'space-between',
+    paddingBottom: spacing.section,
+    paddingHorizontal: spacing.page,
     paddingTop: spacing.sm,
   },
-  headerCopy: {
-    flex: 1,
-    gap: spacing.xs,
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 36,
   },
-  eyebrow: {
-    color: colors.success,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
-    letterSpacing: 1.1,
-    lineHeight: lineHeight.caption,
+  headerIcon: {
+    alignItems: 'center',
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   title: {
     color: colors.textPrimary,
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.display,
-  },
-  description: {
-    color: colors.textSecondary,
     fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.body,
   },
   addButton: {
     alignItems: 'center',
-    backgroundColor: colors.accentPlum,
-    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    borderRadius: radius.sm,
     justifyContent: 'center',
-    minHeight: 40,
-    minWidth: 56,
+    minHeight: 32,
+    minWidth: 32,
   },
   addButtonDisabled: {
     backgroundColor: colors.border,
   },
   addButtonText: {
     color: colors.textOnDark,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.caption,
+    fontSize: fontSize.title,
+    fontWeight: fontWeight.medium,
+    lineHeight: lineHeight.title,
   },
   addButtonTextDisabled: {
     color: colors.textSecondary,
   },
   section: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   sectionHeading: {
     alignItems: 'center',
@@ -450,9 +470,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: colors.textPrimary,
-    fontSize: fontSize.title,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.title,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
+    lineHeight: lineHeight.body,
   },
   sectionDescription: {
     color: colors.textSecondary,
@@ -474,9 +494,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: spacing.md,
-    minHeight: 96,
-    padding: spacing.md,
+    gap: spacing.sm,
+    minHeight: 104,
+    padding: spacing.lg,
   },
   scheduleCopy: {
     flex: 1,
@@ -484,45 +504,46 @@ const styles = StyleSheet.create({
   },
   scheduleActions: {
     alignItems: 'center',
+    flexDirection: 'row',
     gap: spacing.xs,
   },
   editButton: {
     alignItems: 'center',
-    borderColor: colors.accentPlum,
-    borderRadius: radius.pill,
+    borderColor: colors.primary,
+    borderRadius: radius.sm,
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: 44,
-    minWidth: 52,
+    minWidth: 44,
   },
   editButtonText: {
-    color: colors.accentPlum,
+    color: colors.primary,
     fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.caption,
   },
   deleteButton: {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
-    minWidth: 52,
+    minWidth: 40,
   },
   deleteButtonText: {
     color: colors.danger,
     fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.caption,
   },
   scheduleTitle: {
     color: colors.textPrimary,
     fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.body,
   },
   scheduleDetail: {
-    color: colors.accentPlum,
+    color: colors.primary,
     fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.caption,
   },
   scheduleState: {
@@ -531,18 +552,18 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.caption,
   },
   todayList: {
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    overflow: 'hidden',
+    gap: spacing.sm,
   },
   todayRow: {
     alignItems: 'center',
-    borderBottomColor: colors.border,
-    borderBottomWidth: 1,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
     flexDirection: 'row',
-    gap: spacing.xs,
-    padding: spacing.md,
+    gap: spacing.sm,
+    minHeight: 96,
+    padding: spacing.lg,
   },
   todayCopy: {
     flex: 1,
@@ -552,10 +573,15 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: spacing.xs,
   },
+  inlineActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
   todayTime: {
-    color: colors.success,
+    color: colors.primary,
     fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.caption,
   },
   todayTitle: {
@@ -566,8 +592,8 @@ const styles = StyleSheet.create({
   },
   todayAddButton: {
     alignItems: 'center',
-    borderColor: colors.accentPlum,
-    borderRadius: radius.pill,
+    borderColor: colors.primary,
+    borderRadius: radius.sm,
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: 36,
@@ -577,9 +603,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   todayAddButtonText: {
-    color: colors.accentPlum,
+    color: colors.primary,
     fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.caption,
   },
   todayAddButtonTextDisabled: {
@@ -587,24 +613,28 @@ const styles = StyleSheet.create({
   },
   todayEditButton: {
     alignItems: 'center',
-    borderColor: colors.accentPlum,
-    borderRadius: radius.pill,
+    borderColor: colors.primary,
+    borderRadius: radius.sm,
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: 44,
-    minWidth: 52,
+    minWidth: 44,
   },
   todayEditButtonText: {
-    color: colors.accentPlum,
+    color: colors.primary,
     fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.caption,
   },
   visibilityLabel: {
-    color: colors.accentPlum,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.caption,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.sm,
+    color: colors.primary,
+    fontSize: fontSize.micro,
+    fontWeight: fontWeight.medium,
+    lineHeight: lineHeight.micro,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   confirmationRoot: {
     flex: 1,

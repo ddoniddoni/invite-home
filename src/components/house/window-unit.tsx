@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   nickname: {
-    color: colors.textOnDark,
+    color: colors.textPrimary,
     fontSize: fontSize.caption,
     fontWeight: fontWeight.bold,
     lineHeight: lineHeight.caption,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     width: '126%',
   },
   status: {
-    color: colors.textOnDark,
+    color: colors.textSecondary,
     fontSize: fontSize.micro,
     lineHeight: lineHeight.micro,
     opacity: 0.88,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     width: '136%',
   },
   emptyLabel: {
-    color: colors.textOnDark,
+    color: colors.textSecondary,
     fontSize: fontSize.micro,
     lineHeight: lineHeight.micro,
     marginTop: -3,

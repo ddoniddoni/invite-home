@@ -3,15 +3,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomTabBar } from '@/components/navigation/bottom-tab-bar';
 import { ScheduleScreen } from '@/components/schedules/schedule-screen';
-import { fixtureRepeatingSchedules, fixtureTodaySchedules } from '@/fixtures/schedules.fixture';
+import { useLocalSchedules } from '@/features/schedules/local-schedule-store';
+import { fixtureTodaySchedules } from '@/fixtures/schedules.fixture';
 import { colors } from '@/theme/tokens';
 
 export default function ScheduleRoute() {
+  const { repeatingSchedules, updateRepeatingSchedules } = useLocalSchedules();
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <ScheduleScreen
-          repeatingSchedules={fixtureRepeatingSchedules}
+          onRepeatingSchedulesChange={updateRepeatingSchedules}
+          repeatingSchedules={repeatingSchedules}
           todaySchedules={fixtureTodaySchedules}
         />
       </View>

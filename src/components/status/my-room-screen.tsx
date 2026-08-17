@@ -11,20 +11,20 @@ export type MyRoomScreenProps = {
   nickname: string;
   initialStatus: StatusFormValues;
   onClose: () => void;
+  onSave: (nextStatus: StatusFormValues) => void;
 };
 
-export function MyRoomScreen({ initialStatus, nickname, onClose }: MyRoomScreenProps) {
-  const [status, setStatus] = useState<StatusFormValues>(initialStatus);
+export function MyRoomScreen({ initialStatus, nickname, onClose, onSave }: MyRoomScreenProps) {
   const [notice, setNotice] = useState<string | null>(null);
 
   const saveStatus = (nextStatus: StatusFormValues) => {
-    setStatus(nextStatus);
+    onSave(nextStatus);
     setNotice('내 창문 상태를 저장했어요.');
   };
 
   return (
     <View style={styles.container}>
-      <StatusEditor initialValue={status} nickname={nickname} onClose={onClose} onSave={saveStatus} />
+      <StatusEditor initialValue={initialStatus} nickname={nickname} onClose={onClose} onSave={saveStatus} />
       {notice ? (
         <View accessibilityLiveRegion="polite" style={styles.notice}>
           <Text style={styles.noticeText}>{notice}</Text>

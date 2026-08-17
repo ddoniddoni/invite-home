@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import { WindowUnit } from '@/components/house/window-unit';
 import { activityStateLabels, manualUntilLabels, moodKeyLabels } from '@/features/status/presentation';
@@ -71,6 +72,14 @@ function FieldError({ message }: { message?: string }) {
   ) : null;
 }
 
+function BackIcon() {
+  return (
+    <Svg accessible={false} height={20} viewBox="0 0 24 24" width={20}>
+      <Path d="m14.5 5-7 7 7 7" fill="none" stroke={colors.textPrimary} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </Svg>
+  );
+}
+
 export function StatusEditor({ initialValue, nickname, onClose, onSave }: StatusEditorProps) {
   const {
     control,
@@ -94,10 +103,6 @@ export function StatusEditor({ initialValue, nickname, onClose, onSave }: Status
       style={styles.keyboardAvoidingView}
     >
       <View style={styles.header}>
-        <View>
-          <Text style={styles.eyebrow}>MY WINDOW</Text>
-          <Text style={styles.title}>내 방 상태</Text>
-        </View>
         <Pressable
           accessibilityLabel="상태 편집 닫기"
           accessibilityRole="button"
@@ -105,25 +110,29 @@ export function StatusEditor({ initialValue, nickname, onClose, onSave }: Status
           onPress={onClose}
           style={({ pressed }) => [styles.closeButton, pressed ? styles.pressed : null]}
         >
-          <Text style={styles.closeButtonText}>닫기</Text>
+          <BackIcon />
         </Pressable>
+        <Text accessibilityRole="header" style={styles.title}>내 방</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.previewCard}>
-          <WindowUnit
-            activityState={activityState}
-            hasUnreadNoteForMe={false}
-            isMine
-            isPending={false}
-            lightOn={lightOn}
-            moodKey={moodKey}
-            nickname={nickname}
-            readOnly
-            slot={1}
-          />
+          <View style={styles.previewWindow}>
+            <WindowUnit
+              activityState={activityState}
+              hasUnreadNoteForMe={false}
+              isMine
+              isPending={false}
+              lightOn={lightOn}
+              moodKey={moodKey}
+              nickname={nickname}
+              readOnly
+              slot={1}
+            />
+          </View>
           <View style={styles.previewCopy}>
-            <Text style={styles.previewTitle}>내 창문 미리보기</Text>
+            <Text style={styles.previewTitle}>내 창문</Text>
             <Text style={styles.previewDescription}>
               {statusMessage || '한 줄 상태를 적어 보세요.'}
             </Text>
@@ -196,7 +205,7 @@ export function StatusEditor({ initialValue, nickname, onClose, onSave }: Status
                   accessibilityRole="switch"
                   onValueChange={onChange}
                   thumbColor={colors.surface}
-                  trackColor={{ false: colors.border, true: colors.accentPlum }}
+                  trackColor={{ false: colors.border, true: colors.primary }}
                   value={value}
                 />
               </View>
@@ -333,91 +342,88 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: spacing.lg,
-  },
-  eyebrow: {
-    color: colors.accentPlum,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
-    letterSpacing: 1,
-    lineHeight: lineHeight.caption,
+    minHeight: 52,
+    paddingHorizontal: spacing.page,
   },
   title: {
     color: colors.textPrimary,
-    fontSize: fontSize.title,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.title,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
+    lineHeight: lineHeight.body,
   },
   closeButton: {
     alignItems: 'center',
+    borderRadius: radius.sm,
     justifyContent: 'center',
     minHeight: 44,
-    minWidth: 52,
+    minWidth: 44,
   },
-  closeButtonText: {
-    color: colors.accentPlum,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.body,
+  headerSpacer: {
+    minWidth: 44,
   },
   content: {
     gap: spacing.xl,
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.section,
+    paddingHorizontal: spacing.page,
+    paddingTop: spacing.sm,
   },
   previewCard: {
     alignItems: 'center',
-    backgroundColor: colors.skyNight,
-    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
     flexDirection: 'row',
     gap: spacing.lg,
-    minHeight: 132,
-    overflow: 'hidden',
-    padding: spacing.md,
+    minHeight: 144,
+    padding: spacing.lg,
+  },
+  previewWindow: {
+    height: 96,
+    width: 80,
   },
   previewCopy: {
     flex: 1,
     gap: spacing.xs,
   },
   previewTitle: {
-    color: colors.textOnDark,
+    color: colors.textPrimary,
     fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.body,
   },
   previewDescription: {
-    color: colors.textOnDark,
+    color: colors.textSecondary,
     fontSize: fontSize.caption,
     lineHeight: lineHeight.caption,
   },
   moodLabel: {
-    color: colors.windowOn,
+    color: colors.accentPlum,
     fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.caption,
   },
   section: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   sectionTitle: {
     color: colors.textPrimary,
     fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.body,
   },
   segmentedControl: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
     borderColor: colors.border,
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: spacing.xs,
     padding: spacing.xs,
   },
   choiceButton: {
     alignItems: 'center',
     borderColor: colors.border,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     borderWidth: 1,
     flex: 1,
     justifyContent: 'center',
@@ -426,13 +432,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   choiceButtonSelected: {
-    backgroundColor: colors.accentPlum,
-    borderColor: colors.accentPlum,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   choiceButtonText: {
     color: colors.textSecondary,
     fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.caption,
     textAlign: 'center',
   },
@@ -456,9 +462,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
     justifyContent: 'space-between',
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   switchCopy: {
     flex: 1,
@@ -467,7 +473,7 @@ const styles = StyleSheet.create({
   switchTitle: {
     color: colors.textPrimary,
     fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.body,
   },
   moodGrid: {
@@ -486,7 +492,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   moodButtonSelected: {
-    borderColor: colors.accentPlum,
+    borderColor: colors.primary,
     borderWidth: 2,
   },
   moodSwatch: {
@@ -511,6 +517,7 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.caption,
   },
   textInput: {
+    backgroundColor: colors.surface,
     borderColor: colors.border,
     borderRadius: radius.md,
     borderWidth: 1,
@@ -531,8 +538,8 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     alignItems: 'center',
-    backgroundColor: colors.textPrimary,
-    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
     justifyContent: 'center',
     minHeight: 52,
     paddingHorizontal: spacing.lg,
@@ -540,7 +547,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: colors.textOnDark,
     fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
     lineHeight: lineHeight.body,
   },
   pressed: {

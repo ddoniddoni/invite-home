@@ -1,5 +1,4 @@
 import type { RepeatingSchedulePreview, TodaySchedulePreview } from '@/features/schedules/types';
-import type { StatusSchedule } from '@/features/status/effective-status';
 
 export const fixtureRepeatingSchedules: readonly RepeatingSchedulePreview[] = [
   {
@@ -40,17 +39,3 @@ export const fixtureTodaySchedules: readonly TodaySchedulePreview[] = [
     visibility: 'house',
   },
 ];
-
-export const fixtureStatusSchedules: readonly StatusSchedule[] = fixtureRepeatingSchedules.map(
-  (schedule, index) => ({
-    id: schedule.id,
-    daysOfWeek: schedule.daysOfWeek,
-    startTime: schedule.startTime,
-    endTime: schedule.endTime,
-    activityState: schedule.activityState,
-    lightOn: schedule.lightOn,
-    priority: schedule.priority,
-    enabled: schedule.isEnabled,
-    updatedAt: new Date(Date.UTC(2025, 0, index + 1)),
-  }),
-);

@@ -1,4 +1,4 @@
-import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import Svg, { Path, Rect } from 'react-native-svg';
 
 import type { HouseType } from '@/features/houses/types';
 import { colors } from '@/theme/tokens';
@@ -10,12 +10,12 @@ type HouseBuildingProps = {
 function ApartmentFacade() {
   return (
     <>
-      <Rect fill={colors.buildingShadow} height="307" opacity={0.35} rx="12" width="270" x="30" y="85" />
-      <Rect fill={colors.buildingApartment} height="307" rx="12" width="270" x="24" y="77" />
-      <Rect fill={colors.windowFrame} height="22" rx="7" width="286" x="17" y="63" />
-      <Rect fill={colors.surface} height="17" opacity={0.55} width="6" x="30" y="92" />
-      <Path d="M24 358h270" opacity={0.35} stroke={colors.buildingShadow} strokeWidth="4" />
-      <Rect fill={colors.windowFrame} height="54" rx="7" width="45" x="137" y="330" />
+      <Rect fill={colors.buildingShadow} height="323" opacity={0.34} rx="10" width="274" x="30" y="68" />
+      <Rect fill={colors.buildingApartment} height="323" rx="9" width="274" x="22" y="60" />
+      <Rect fill={colors.surfaceMuted} height="21" rx="5" width="250" x="34" y="43" />
+      <Rect fill={colors.surface} height="13" opacity={0.48} width="5" x="31" y="74" />
+      <Path d="M22 382h274" opacity={0.36} stroke={colors.buildingShadow} strokeWidth="3" />
+      <Rect fill={colors.windowOff} height="44" rx="4" width="40" x="140" y="338" />
     </>
   );
 }
@@ -23,12 +23,12 @@ function ApartmentFacade() {
 function VillaFacade() {
   return (
     <>
-      <Path d="M20 189 160 55l140 134Z" fill={colors.buildingShadow} opacity={0.4} />
-      <Path d="M16 179 160 39l144 140Z" fill={colors.accentPlum} />
-      <Rect fill={colors.buildingVilla} height="219" rx="10" width="270" x="25" y="170" />
-      <Path d="M25 170h270" opacity={0.35} stroke={colors.buildingShadow} strokeWidth="5" />
-      <Rect fill={colors.windowFrame} height="59" rx="8" width="48" x="136" y="330" />
-      <Path d="M43 202h234" opacity={0.18} stroke={colors.surface} strokeWidth="4" />
+      <Path d="M30 181 160 48l130 133Z" fill={colors.buildingShadow} opacity={0.34} />
+      <Path d="M24 171 160 35l136 136Z" fill={colors.primary} />
+      <Rect fill={colors.buildingVilla} height="222" rx="9" width="266" x="27" y="164" />
+      <Path d="M27 164h266" opacity={0.34} stroke={colors.buildingShadow} strokeWidth="4" />
+      <Rect fill={colors.windowOff} height="53" rx="4" width="44" x="138" y="333" />
+      <Path d="M45 196h230" opacity={0.28} stroke={colors.surface} strokeWidth="3" />
     </>
   );
 }
@@ -36,13 +36,13 @@ function VillaFacade() {
 function DetachedFacade() {
   return (
     <>
-      <Rect fill={colors.buildingShadow} height="208" opacity={0.35} rx="12" width="230" x="49" y="179" />
-      <Path d="M35 190 160 67l125 123Z" fill={colors.accentPlum} />
-      <Path d="M45 181 160 68l115 113Z" fill={colors.buildingDetached} />
-      <Rect fill={colors.buildingDetached} height="204" rx="9" width="230" x="45" y="177" />
-      <Rect fill={colors.buildingShadow} height="65" rx="3" width="22" x="224" y="88" />
-      <Rect fill={colors.windowFrame} height="65" rx="8" width="52" x="134" y="316" />
-      <Path d="M45 177h230" opacity={0.35} stroke={colors.buildingShadow} strokeWidth="5" />
+      <Rect fill={colors.buildingShadow} height="206" opacity={0.34} rx="10" width="232" x="47" y="180" />
+      <Path d="M34 189 160 62l126 127Z" fill={colors.primary} />
+      <Path d="M44 180 160 65l116 115Z" fill={colors.buildingDetached} />
+      <Rect fill={colors.buildingDetached} height="202" rx="8" width="232" x="44" y="174" />
+      <Rect fill={colors.buildingShadow} height="61" rx="3" width="20" x="224" y="88" />
+      <Rect fill={colors.windowOff} height="61" rx="4" width="46" x="137" y="315" />
+      <Path d="M44 174h232" opacity={0.34} stroke={colors.buildingShadow} strokeWidth="4" />
     </>
   );
 }
@@ -50,14 +50,7 @@ function DetachedFacade() {
 export function HouseBuilding({ houseType }: HouseBuildingProps) {
   return (
     <Svg accessible={false} height="100%" viewBox="0 0 320 420" width="100%">
-      <Defs>
-        <LinearGradient id="ground" x1="0" x2="0" y1="0" y2="1">
-          <Stop offset="0" stopColor={colors.buildingShadow} stopOpacity="0.04" />
-          <Stop offset="1" stopColor={colors.buildingShadow} stopOpacity="0.24" />
-        </LinearGradient>
-      </Defs>
-      <Circle cx="267" cy="58" fill={colors.moon} opacity={0.9} r="19" />
-      <Rect fill="url(#ground)" height="62" width="320" y="358" />
+      <Rect fill={colors.backgroundDay} height="420" width="320" />
       {houseType === 'apartment' ? <ApartmentFacade /> : null}
       {houseType === 'villa' ? <VillaFacade /> : null}
       {houseType === 'detached' ? <DetachedFacade /> : null}

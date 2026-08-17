@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import {
   getHouseLayout,
@@ -6,8 +6,7 @@ import {
   type HouseSlotLayout,
 } from '@/features/houses/config/house-layouts';
 import type { HouseType, HouseWindowMember, TimeOfDay } from '@/features/houses/types';
-import { colors, radius, spacing } from '@/theme/tokens';
-import { fontSize, fontWeight, lineHeight } from '@/theme/typography';
+import { colors } from '@/theme/tokens';
 
 import { HouseBuilding } from './house-building';
 import { EmptyWindowUnit, WindowUnit } from './window-unit';
@@ -148,25 +147,13 @@ export function HouseScene({
           ))}
         </View>
       </View>
-      <View accessible accessibilityLabel="창문 표시 안내" style={styles.legend}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.legendLight]} />
-          <Text style={styles.legendText}>전등 켜짐</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, styles.legendPending]} />
-          <Text style={styles.legendText}>입주 대기</Text>
-        </View>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: radius.lg,
     overflow: 'hidden',
-    paddingBottom: spacing.md,
   },
   scene: {
     width: '100%',
@@ -176,37 +163,5 @@ const styles = StyleSheet.create({
   },
   windowLayer: {
     pointerEvents: 'box-none',
-  },
-  legend: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.lg,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.md,
-  },
-  legendItem: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  legendDot: {
-    borderRadius: radius.pill,
-    height: 10,
-    width: 10,
-  },
-  legendLight: {
-    backgroundColor: colors.windowOn,
-  },
-  legendPending: {
-    backgroundColor: colors.windowPending,
-    borderColor: colors.windowFrame,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-  },
-  legendText: {
-    color: colors.textOnDark,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.medium,
-    lineHeight: lineHeight.caption,
   },
 });

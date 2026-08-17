@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import { EmptyState } from '@/components/ui/empty-state';
 import { noteTypeLabels } from '@/features/notes/presentation';
@@ -18,6 +19,49 @@ const directionLabels: Record<NoteDirection, string> = {
   sent: '보낸 메모',
 };
 
+function EnvelopeIcon({ color }: { color: string }) {
+  return (
+    <Svg accessible={false} height={20} viewBox="0 0 24 24" width={20}>
+      <Path d="M4.5 6.5h15v11h-15z" fill="none" stroke={color} strokeLinejoin="round" strokeWidth="1.7" />
+      <Path d="m5 7 7 5.6L19 7" fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" />
+    </Svg>
+  );
+}
+
+function NoteCard({ direction, note }: { direction: NoteDirection; note: NotePreview }) {
+  const typeLabel = noteTypeLabels[note.type];
+  const sender = direction === 'received' ? note.counterpartNickname : `나 → ${note.counterpartNickname}`;
+  const isMemo = note.type === 'memo';
+
+  return (
+    <View
+      accessibilityLabel={`${note.counterpartNickname}의 ${typeLabel}. ${note.isUnread ? '읽지 않음.' : '읽음.'} ${note.body}`}
+      accessible
+      style={[styles.noteCard, note.isUnread ? styles.unreadNoteCard : null]}
+    >
+      <View style={styles.noteMeta}>
+        <View style={styles.senderGroup}>
+          <View style={[styles.noteIcon, isMemo ? styles.noteIconMemo : styles.noteIconGreeting]}>
+            <EnvelopeIcon color={isMemo ? colors.note : colors.accentPlum} />
+          </View>
+          <View style={styles.senderCopy}>
+            <Text style={styles.noteSender}>{sender}</Text>
+            <Text style={styles.noteType}>{typeLabel}</Text>
+          </View>
+        </View>
+        <Text style={styles.noteTime}>{note.createdAtLabel}</Text>
+      </View>
+      <Text style={styles.noteBody}>{note.body}</Text>
+      <View style={styles.noteFooter}>
+        <View style={styles.noteRule} />
+        <Text style={[styles.readState, note.isUnread ? styles.unreadState : null]}>
+          {note.isUnread ? '읽지 않음' : '읽음'}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export function NotesScreen({ notes }: NotesScreenProps) {
   const [direction, setDirection] = useState<NoteDirection>('received');
   const visibleNotes = notes.filter((note) => note.direction === direction);
@@ -26,8 +70,13 @@ export function NotesScreen({ notes }: NotesScreenProps) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>SMALL NOTES</Text>
+          <View style={styles.headerIcon}>
+            <EnvelopeIcon color={colors.textPrimary} />
+          </View>
           <Text accessibilityRole="header" style={styles.title}>메모</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <View style={styles.intro}>
           <Text style={styles.description}>길지 않아도 서로의 하루에 닿을 수 있어요.</Text>
         </View>
 
@@ -62,28 +111,7 @@ export function NotesScreen({ notes }: NotesScreenProps) {
           />
         ) : (
           <View style={styles.noteList}>
-            {visibleNotes.map((note) => (
-              <View
-                accessibilityLabel={`${note.counterpartNickname}의 ${noteTypeLabels[note.type]}. ${note.isUnread ? '읽지 않음.' : '읽음.'} ${note.body}`}
-                accessible
-                key={note.id}
-                style={[styles.noteCard, note.isUnread ? styles.unreadNoteCard : null]}
-              >
-                <View style={styles.noteMeta}>
-                  <Text style={styles.noteSender}>
-                    {direction === 'received' ? note.counterpartNickname : `나 → ${note.counterpartNickname}`}
-                  </Text>
-                  <Text style={styles.noteTime}>{note.createdAtLabel}</Text>
-                </View>
-                <Text style={styles.noteBody}>{note.body}</Text>
-                <View style={styles.noteFooter}>
-                  <Text style={styles.noteType}>{noteTypeLabels[note.type]}</Text>
-                  <Text style={[styles.readState, note.isUnread ? styles.unreadState : null]}>
-                    {note.isUnread ? '읽지 않음' : '읽음'}
-                  </Text>
-                </View>
-              </View>
-            ))}
+            {visibleNotes.map((note) => <NoteCard direction={direction} key={note.id} note={note} />)}
           </View>
         )}
       </ScrollView>
@@ -97,26 +125,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    gap: spacing.lg,
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
-  header: {
-    gap: spacing.xs,
+    gap: spacing.xl,
+    paddingBottom: spacing.section,
+    paddingHorizontal: spacing.page,
     paddingTop: spacing.sm,
   },
-  eyebrow: {
-    color: colors.note,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
-    letterSpacing: 1.1,
-    lineHeight: lineHeight.caption,
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 36,
+  },
+  headerIcon: {
+    alignItems: 'center',
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   title: {
     color: colors.textPrimary,
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.display,
+    fontSize: fontSize.body,
+    fontWeight: fontWeight.semibold,
+    lineHeight: lineHeight.body,
+  },
+  headerSpacer: {
+    width: 32,
+  },
+  intro: {
+    marginTop: -spacing.sm,
   },
   description: {
     color: colors.textSecondary,
@@ -124,31 +160,33 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.body,
   },
   segmentedControl: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceMuted,
     borderColor: colors.border,
-    borderRadius: radius.pill,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     padding: spacing.xs,
   },
   segmentButton: {
     alignItems: 'center',
-    borderRadius: radius.pill,
+    borderRadius: radius.sm,
     flex: 1,
     justifyContent: 'center',
     minHeight: 44,
   },
   segmentButtonSelected: {
-    backgroundColor: colors.note,
+    backgroundColor: colors.surface,
+    borderColor: colors.noteBorder,
+    borderWidth: 1,
   },
   segmentText: {
     color: colors.textSecondary,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.body,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semibold,
+    lineHeight: lineHeight.caption,
   },
   segmentTextSelected: {
-    color: colors.textOnDark,
+    color: colors.textPrimary,
   },
   noteList: {
     gap: spacing.md,
@@ -158,23 +196,50 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.md,
     borderWidth: 1,
-    gap: spacing.sm,
-    padding: spacing.md,
+    gap: spacing.md,
+    minHeight: 132,
+    padding: spacing.lg,
   },
   unreadNoteCard: {
-    borderColor: colors.note,
-    borderLeftWidth: 4,
+    backgroundColor: colors.noteUnreadSurface,
+    borderColor: colors.noteBorder,
   },
   noteMeta: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  senderGroup: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    minWidth: 0,
+  },
+  noteIcon: {
+    alignItems: 'center',
+    borderRadius: radius.sm,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  noteIconMemo: {
+    backgroundColor: colors.noteSoft,
+    borderColor: colors.noteBorder,
+    borderWidth: 1,
+  },
+  noteIconGreeting: {
+    backgroundColor: colors.surfaceMuted,
+    borderColor: colors.border,
+    borderWidth: 1,
+  },
+  senderCopy: {
+    gap: 1,
+    marginLeft: spacing.sm,
+  },
   noteSender: {
     color: colors.textPrimary,
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.body,
+    fontSize: fontSize.caption,
+    fontWeight: fontWeight.semibold,
+    lineHeight: lineHeight.caption,
   },
   noteTime: {
     color: colors.textSecondary,
@@ -189,13 +254,18 @@ const styles = StyleSheet.create({
   noteFooter: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
+  },
+  noteRule: {
+    backgroundColor: colors.border,
+    flex: 1,
+    height: 1,
+    marginRight: spacing.sm,
   },
   noteType: {
     color: colors.accentPlum,
-    fontSize: fontSize.caption,
-    fontWeight: fontWeight.bold,
-    lineHeight: lineHeight.caption,
+    fontSize: fontSize.micro,
+    fontWeight: fontWeight.medium,
+    lineHeight: lineHeight.micro,
   },
   readState: {
     color: colors.textSecondary,

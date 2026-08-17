@@ -4,12 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomTabBar } from '@/components/navigation/bottom-tab-bar';
 import { MyRoomScreen } from '@/components/status/my-room-screen';
-import { fixtureCurrentStatus, fixtureMembers, fixtureCurrentUserId } from '@/fixtures/house.fixture';
+import { useLocalStatus } from '@/features/status/local-status-store';
+import { fixtureMembers, fixtureCurrentUserId } from '@/fixtures/house.fixture';
 import { colors } from '@/theme/tokens';
 
 const currentMember = fixtureMembers.find((member) => member.id === fixtureCurrentUserId);
 
 export default function MyRoomRoute() {
+  const { currentStatus, saveStatus } = useLocalStatus();
+
   if (!currentMember) {
     return null;
   }
@@ -18,9 +21,10 @@ export default function MyRoomRoute() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <MyRoomScreen
-          initialStatus={fixtureCurrentStatus}
+          initialStatus={currentStatus.values}
           nickname={currentMember.nickname}
           onClose={() => router.navigate('/')}
+          onSave={saveStatus}
         />
       </View>
       <BottomTabBar />

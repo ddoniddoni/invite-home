@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 import { activityStateLabels } from '@/features/status/presentation';
 import { findOverlappingRepeatingSchedules } from '@/features/schedules/schedule-overlap';
@@ -41,6 +42,43 @@ const initialSchedule: ScheduleFormValues = {
   lightOn: true,
   enabled: true,
 };
+
+function BackIcon() {
+  return (
+    <Svg accessible={false} height={20} viewBox="0 0 24 24" width={20}>
+      <Path d="m14.5 5.5-6 6.5 6 6.5" fill="none" stroke={colors.textPrimary} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </Svg>
+  );
+}
+
+type ComposerHeaderProps = {
+  isEditing: boolean;
+  isSubmitting: boolean;
+  onClose: () => void;
+};
+
+function ComposerHeader({ isEditing, isSubmitting, onClose }: ComposerHeaderProps) {
+  return (
+    <View style={styles.header}>
+      <Pressable
+        accessibilityLabel="스케줄 작성 닫기"
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isSubmitting }}
+        disabled={isSubmitting}
+        hitSlop={spacing.sm}
+        onPress={onClose}
+        style={({ pressed }) => [styles.backButton, pressed && !isSubmitting ? styles.pressed : null]}
+      >
+        <BackIcon />
+      </Pressable>
+      <View style={styles.headerTitleGroup}>
+        <Text style={styles.eyebrow}>매일의 리듬</Text>
+        <Text accessibilityRole="header" style={styles.title}>{isEditing ? '반복 스케줄 수정' : '반복 스케줄'}</Text>
+      </View>
+      <View style={styles.headerBalance} />
+    </View>
+  );
+}
 
 function FieldError({ message }: { message?: string }) {
   return message ? <Text accessibilityRole="alert" style={styles.fieldError}>{message}</Text> : null;
@@ -78,25 +116,14 @@ export function ScheduleComposer({ initialValue, onClose, onSave, overlapSchedul
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoidingView}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.eyebrow}>{isEditing ? 'REFINE RHYTHM' : 'NEW RHYTHM'}</Text>
-            <Text accessibilityRole="header" style={styles.title}>{isEditing ? '반복 스케줄 수정' : '반복 스케줄'}</Text>
-          </View>
-          <Pressable
-            accessibilityLabel="스케줄 작성 닫기"
-            accessibilityRole="button"
-            accessibilityState={{ disabled: isSubmitting }}
-            disabled={isSubmitting}
-            hitSlop={spacing.sm}
-            onPress={onClose}
-            style={({ pressed }) => [styles.closeButton, pressed && !isSubmitting ? styles.pressed : null]}
-          >
-            <Text style={[styles.closeButtonText, isSubmitting ? styles.closeButtonTextDisabled : null]}>닫기</Text>
-          </Pressable>
-        </View>
+        <ComposerHeader isEditing={isEditing} isSubmitting={isSubmitting} onClose={onClose} />
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <View style={styles.intro}>
+            <Text style={styles.introTitle}>생활 리듬을 기록해요</Text>
+            <Text style={styles.introDescription}>선택한 시간에는 창문 상태가 자동으로 바뀌어요.</Text>
+          </View>
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>이름</Text>
             <Controller
@@ -162,7 +189,9 @@ export function ScheduleComposer({ initialValue, onClose, onSave, overlapSchedul
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>시간</Text>
-            <View style={styles.timeRow}>
+            <View style={styles.timeRange}>
+              <View style={styles.timeInputGroup}>
+                <Text style={styles.timeInputLabel}>시작</Text>
               <Controller
                 control={control}
                 name="startTime"
@@ -176,12 +205,15 @@ export function ScheduleComposer({ initialValue, onClose, onSave, overlapSchedul
                     onChangeText={onChange}
                     placeholder="09:00"
                     placeholderTextColor={colors.textSecondary}
-                    style={[styles.textInput, styles.timeInput]}
+                    style={styles.timeInput}
                     value={value}
                   />
                 )}
               />
-              <Text style={styles.timeSeparator}>–</Text>
+              </View>
+              <View style={styles.timeDivider} />
+              <View style={styles.timeInputGroup}>
+                <Text style={styles.timeInputLabel}>종료</Text>
               <Controller
                 control={control}
                 name="endTime"
@@ -195,11 +227,12 @@ export function ScheduleComposer({ initialValue, onClose, onSave, overlapSchedul
                     onChangeText={onChange}
                     placeholder="18:00"
                     placeholderTextColor={colors.textSecondary}
-                    style={[styles.textInput, styles.timeInput]}
+                    style={styles.timeInput}
                     value={value}
                   />
                 )}
               />
+              </View>
             </View>
             <Text style={styles.helperText}>종료 시각이 더 이르면 자정 넘어까지 이어져요.</Text>
             <FieldError message={errors.startTime?.message || errors.endTime?.message} />
@@ -306,51 +339,56 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: { flex: 1 },
   header: {
     alignItems: 'center', borderBottomColor: colors.border, borderBottomWidth: 1, flexDirection: 'row',
-    justifyContent: 'space-between', minHeight: 70, paddingHorizontal: spacing.lg,
+    minHeight: 72, paddingHorizontal: spacing.page,
   },
-  eyebrow: { color: colors.success, fontSize: fontSize.caption, fontWeight: fontWeight.bold, letterSpacing: 1.1, lineHeight: lineHeight.caption },
-  title: { color: colors.textPrimary, fontSize: fontSize.title, fontWeight: fontWeight.bold, lineHeight: lineHeight.title },
-  closeButton: { alignItems: 'center', justifyContent: 'center', minHeight: 44, minWidth: 44 },
-  closeButtonText: { color: colors.accentPlum, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
-  closeButtonTextDisabled: { color: colors.textSecondary },
-  content: { gap: spacing.lg, padding: spacing.lg, paddingBottom: spacing.xxl },
+  backButton: { alignItems: 'center', justifyContent: 'center', minHeight: 44, minWidth: 44 },
+  headerTitleGroup: { alignItems: 'center', flex: 1, gap: 1 },
+  headerBalance: { minWidth: 44 },
+  eyebrow: { color: colors.accentPlum, fontSize: fontSize.micro, fontWeight: fontWeight.semibold, letterSpacing: 1.4, lineHeight: lineHeight.micro },
+  title: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
+  content: { gap: spacing.xl, paddingHorizontal: spacing.page, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
+  intro: { borderLeftColor: colors.buildingApartment, borderLeftWidth: 3, gap: spacing.xs, paddingLeft: spacing.md },
+  introTitle: { color: colors.textPrimary, fontSize: fontSize.title, fontWeight: fontWeight.bold, lineHeight: lineHeight.title },
+  introDescription: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.caption },
   section: { gap: spacing.sm },
-  sectionTitle: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
+  sectionTitle: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.semibold, lineHeight: lineHeight.body },
   textInput: {
     backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md, borderWidth: 1,
-    color: colors.textPrimary, fontSize: fontSize.body, lineHeight: lineHeight.body, minHeight: 48, paddingHorizontal: spacing.md,
+    color: colors.textPrimary, fontSize: fontSize.body, lineHeight: lineHeight.body, minHeight: 52, paddingHorizontal: spacing.md,
   },
   weekdayGrid: { flexDirection: 'row', gap: spacing.xs },
   weekdayButton: {
-    alignItems: 'center', borderColor: colors.border, borderRadius: radius.pill, borderWidth: 1,
-    flex: 1, justifyContent: 'center', minHeight: 44,
+    alignItems: 'center', backgroundColor: colors.surfaceMuted, borderColor: colors.border, borderRadius: radius.sm, borderWidth: 1,
+    flex: 1, justifyContent: 'center', minHeight: 42,
   },
-  weekdayButtonSelected: { backgroundColor: colors.accentPlum, borderColor: colors.accentPlum },
-  weekdayText: { color: colors.textSecondary, fontSize: fontSize.caption, fontWeight: fontWeight.bold, lineHeight: lineHeight.caption },
+  weekdayButtonSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  weekdayText: { color: colors.textSecondary, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, lineHeight: lineHeight.caption },
   weekdayTextSelected: { color: colors.textOnDark },
-  timeRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
-  timeInput: { flex: 1, textAlign: 'center' },
-  timeSeparator: { color: colors.textSecondary, fontSize: fontSize.title, lineHeight: lineHeight.title },
+  timeRange: { alignItems: 'stretch', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md, borderWidth: 1, flexDirection: 'row', minHeight: 68 },
+  timeInputGroup: { flex: 1, gap: 1, justifyContent: 'center', paddingHorizontal: spacing.md },
+  timeInputLabel: { color: colors.textSecondary, fontSize: fontSize.micro, fontWeight: fontWeight.semibold, letterSpacing: 0.6, lineHeight: lineHeight.micro },
+  timeInput: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.semibold, lineHeight: lineHeight.body, minHeight: 28, padding: 0 },
+  timeDivider: { backgroundColor: colors.border, marginVertical: spacing.md, width: 1 },
   helperText: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.caption },
   activityGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   activityButton: {
-    alignItems: 'center', borderColor: colors.border, borderRadius: radius.pill, borderWidth: 1,
-    minHeight: 40, paddingHorizontal: spacing.md, justifyContent: 'center',
+    alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.sm, borderWidth: 1,
+    flexGrow: 1, flexBasis: '30%', minHeight: 42, paddingHorizontal: spacing.sm, justifyContent: 'center',
   },
-  activityButtonSelected: { backgroundColor: colors.accentPlum, borderColor: colors.accentPlum },
-  activityText: { color: colors.textSecondary, fontSize: fontSize.caption, fontWeight: fontWeight.bold, lineHeight: lineHeight.caption },
+  activityButtonSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  activityText: { color: colors.textSecondary, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, lineHeight: lineHeight.caption },
   activityTextSelected: { color: colors.textOnDark },
   switchRow: {
-    alignItems: 'center', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md,
-    borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', minHeight: 60, paddingHorizontal: spacing.md,
+    alignItems: 'center', backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1,
+    flexDirection: 'row', justifyContent: 'space-between', minHeight: 64, paddingHorizontal: spacing.md,
   },
-  switchLabel: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.medium, lineHeight: lineHeight.body },
-  priorityNotice: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md, borderWidth: 1, gap: spacing.xs, padding: spacing.md },
-  priorityTitle: { color: colors.accentPlum, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
+  switchLabel: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.semibold, lineHeight: lineHeight.body },
+  priorityNotice: { backgroundColor: colors.surfaceMuted, borderLeftColor: colors.accentPlum, borderLeftWidth: 3, gap: spacing.xs, padding: spacing.md },
+  priorityTitle: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.semibold, lineHeight: lineHeight.body },
   priorityDescription: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.caption },
   overlapDetail: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.caption },
   fieldError: { color: colors.danger, fontSize: fontSize.caption, fontWeight: fontWeight.medium, lineHeight: lineHeight.caption },
-  saveButton: { alignItems: 'center', backgroundColor: colors.success, borderRadius: radius.md, justifyContent: 'center', minHeight: 52, paddingHorizontal: spacing.lg },
+  saveButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: radius.md, justifyContent: 'center', minHeight: 54, paddingHorizontal: spacing.lg },
   saveButtonText: { color: colors.textOnDark, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
   pressed: { opacity: 0.74 },
 });

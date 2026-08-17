@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 import { todayScheduleVisibilityLabels } from '@/features/schedules/presentation';
 import {
@@ -41,6 +42,43 @@ const initialSchedule: TodayScheduleFormValues = {
   endTime: '21:00',
   visibility: 'house',
 };
+
+function BackIcon() {
+  return (
+    <Svg accessible={false} height={20} viewBox="0 0 24 24" width={20}>
+      <Path d="m14.5 5.5-6 6.5 6 6.5" fill="none" stroke={colors.textPrimary} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+    </Svg>
+  );
+}
+
+type ComposerHeaderProps = {
+  isEditing: boolean;
+  isSubmitting: boolean;
+  onClose: () => void;
+};
+
+function ComposerHeader({ isEditing, isSubmitting, onClose }: ComposerHeaderProps) {
+  return (
+    <View style={styles.header}>
+      <Pressable
+        accessibilityLabel="오늘 일정 작성 닫기"
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isSubmitting }}
+        disabled={isSubmitting}
+        hitSlop={spacing.sm}
+        onPress={onClose}
+        style={({ pressed }) => [styles.backButton, pressed && !isSubmitting ? styles.pressed : null]}
+      >
+        <BackIcon />
+      </Pressable>
+      <View style={styles.headerTitleGroup}>
+        <Text style={styles.eyebrow}>오늘의 기록</Text>
+        <Text accessibilityRole="header" style={styles.title}>{isEditing ? '오늘 일정 수정' : '오늘 일정'}</Text>
+      </View>
+      <View style={styles.headerBalance} />
+    </View>
+  );
+}
 
 function FieldError({ message }: { message?: string }) {
   return message ? <Text accessibilityRole="alert" style={styles.fieldError}>{message}</Text> : null;
@@ -82,27 +120,16 @@ export function TodayScheduleComposer({ initialValue, onClose, onSave }: TodaySc
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoidingView}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.eyebrow}>{isEditing ? 'REFINE TODAY' : 'TODAY, AT HOME'}</Text>
-            <Text accessibilityRole="header" style={styles.title}>{isEditing ? '오늘 일정 수정' : '오늘 일정'}</Text>
-          </View>
-          <Pressable
-            accessibilityLabel="오늘 일정 작성 닫기"
-            accessibilityRole="button"
-            accessibilityState={{ disabled: isSubmitting }}
-            disabled={isSubmitting}
-            hitSlop={spacing.sm}
-            onPress={onClose}
-            style={({ pressed }) => [styles.closeButton, pressed && !isSubmitting ? styles.pressed : null]}
-          >
-            <Text style={[styles.closeButtonText, isSubmitting ? styles.closeButtonTextDisabled : null]}>닫기</Text>
-          </Pressable>
-        </View>
+        <ComposerHeader isEditing={isEditing} isSubmitting={isSubmitting} onClose={onClose} />
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <View style={styles.intro}>
+            <Text style={styles.introTitle}>오늘의 약속을 남겨요</Text>
+            <Text style={styles.introDescription}>자세한 장소 대신, 함께 사는 친구에게 필요한 만큼만 전해요.</Text>
+          </View>
+
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>무슨 일이 있나요?</Text>
+            <Text style={styles.sectionTitle}>일정 이름</Text>
             <Controller
               control={control}
               name="title"
@@ -125,7 +152,9 @@ export function TodayScheduleComposer({ initialValue, onClose, onSave }: TodaySc
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>시간</Text>
-            <View style={styles.timeRow}>
+            <View style={styles.timeRange}>
+              <View style={styles.timeInputGroup}>
+                <Text style={styles.timeInputLabel}>시작</Text>
               <Controller
                 control={control}
                 name="startTime"
@@ -139,12 +168,15 @@ export function TodayScheduleComposer({ initialValue, onClose, onSave }: TodaySc
                     onChangeText={onChange}
                     placeholder="20:00"
                     placeholderTextColor={colors.textSecondary}
-                    style={[styles.textInput, styles.timeInput]}
+                    style={styles.timeInput}
                     value={value}
                   />
                 )}
               />
-              <Text style={styles.timeSeparator}>–</Text>
+              </View>
+              <View style={styles.timeDivider} />
+              <View style={styles.timeInputGroup}>
+                <Text style={styles.timeInputLabel}>종료</Text>
               <Controller
                 control={control}
                 name="endTime"
@@ -158,11 +190,12 @@ export function TodayScheduleComposer({ initialValue, onClose, onSave }: TodaySc
                     onChangeText={onChange}
                     placeholder="21:00"
                     placeholderTextColor={colors.textSecondary}
-                    style={[styles.textInput, styles.timeInput]}
+                    style={styles.timeInput}
                     value={value}
                   />
                 )}
               />
+              </View>
             </View>
             <FieldError message={errors.startTime?.message || errors.endTime?.message} />
           </View>
@@ -212,34 +245,39 @@ const styles = StyleSheet.create({
   keyboardAvoidingView: { flex: 1 },
   header: {
     alignItems: 'center', borderBottomColor: colors.border, borderBottomWidth: 1, flexDirection: 'row',
-    justifyContent: 'space-between', minHeight: 70, paddingHorizontal: spacing.lg,
+    minHeight: 72, paddingHorizontal: spacing.page,
   },
-  eyebrow: { color: colors.success, fontSize: fontSize.caption, fontWeight: fontWeight.bold, letterSpacing: 1.1, lineHeight: lineHeight.caption },
-  title: { color: colors.textPrimary, fontSize: fontSize.title, fontWeight: fontWeight.bold, lineHeight: lineHeight.title },
-  closeButton: { alignItems: 'center', justifyContent: 'center', minHeight: 44, minWidth: 44 },
-  closeButtonText: { color: colors.accentPlum, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
-  closeButtonTextDisabled: { color: colors.textSecondary },
-  content: { gap: spacing.lg, padding: spacing.lg, paddingBottom: spacing.xxl },
+  backButton: { alignItems: 'center', justifyContent: 'center', minHeight: 44, minWidth: 44 },
+  headerTitleGroup: { alignItems: 'center', flex: 1, gap: 1 },
+  headerBalance: { minWidth: 44 },
+  eyebrow: { color: colors.accentPlum, fontSize: fontSize.micro, fontWeight: fontWeight.semibold, letterSpacing: 1.4, lineHeight: lineHeight.micro },
+  title: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
+  content: { gap: spacing.xl, paddingHorizontal: spacing.page, paddingTop: spacing.xl, paddingBottom: spacing.xxl },
+  intro: { borderLeftColor: colors.note, borderLeftWidth: 3, gap: spacing.xs, paddingLeft: spacing.md },
+  introTitle: { color: colors.textPrimary, fontSize: fontSize.title, fontWeight: fontWeight.bold, lineHeight: lineHeight.title },
+  introDescription: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.caption },
   section: { gap: spacing.sm },
-  sectionTitle: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
+  sectionTitle: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.semibold, lineHeight: lineHeight.body },
   textInput: {
     backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md, borderWidth: 1,
-    color: colors.textPrimary, fontSize: fontSize.body, lineHeight: lineHeight.body, minHeight: 48, paddingHorizontal: spacing.md,
+    color: colors.textPrimary, fontSize: fontSize.body, lineHeight: lineHeight.body, minHeight: 52, paddingHorizontal: spacing.md,
   },
-  timeRow: { alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
-  timeInput: { flex: 1, textAlign: 'center' },
-  timeSeparator: { color: colors.textSecondary, fontSize: fontSize.title, lineHeight: lineHeight.title },
+  timeRange: { alignItems: 'stretch', backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md, borderWidth: 1, flexDirection: 'row', minHeight: 68 },
+  timeInputGroup: { flex: 1, gap: 1, justifyContent: 'center', paddingHorizontal: spacing.md },
+  timeInputLabel: { color: colors.textSecondary, fontSize: fontSize.micro, fontWeight: fontWeight.semibold, letterSpacing: 0.6, lineHeight: lineHeight.micro },
+  timeInput: { color: colors.textPrimary, fontSize: fontSize.body, fontWeight: fontWeight.semibold, lineHeight: lineHeight.body, minHeight: 28, padding: 0 },
+  timeDivider: { backgroundColor: colors.border, marginVertical: spacing.md, width: 1 },
   visibilityOptions: { flexDirection: 'row', gap: spacing.sm },
   visibilityChoice: {
-    alignItems: 'center', borderColor: colors.border, borderRadius: radius.pill, borderWidth: 1,
-    flex: 1, justifyContent: 'center', minHeight: 44, paddingHorizontal: spacing.sm,
+    alignItems: 'center', backgroundColor: colors.surfaceMuted, borderColor: colors.border, borderRadius: radius.sm, borderWidth: 1,
+    flex: 1, justifyContent: 'center', minHeight: 48, paddingHorizontal: spacing.sm,
   },
-  visibilityChoiceSelected: { backgroundColor: colors.accentPlum, borderColor: colors.accentPlum },
-  visibilityChoiceText: { color: colors.textSecondary, fontSize: fontSize.caption, fontWeight: fontWeight.bold, lineHeight: lineHeight.caption },
+  visibilityChoiceSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  visibilityChoiceText: { color: colors.textSecondary, fontSize: fontSize.caption, fontWeight: fontWeight.semibold, lineHeight: lineHeight.caption },
   visibilityChoiceTextSelected: { color: colors.textOnDark },
   helperText: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.caption },
   fieldError: { color: colors.danger, fontSize: fontSize.caption, fontWeight: fontWeight.medium, lineHeight: lineHeight.caption },
-  saveButton: { alignItems: 'center', backgroundColor: colors.success, borderRadius: radius.md, justifyContent: 'center', minHeight: 52, paddingHorizontal: spacing.lg },
+  saveButton: { alignItems: 'center', backgroundColor: colors.primary, borderRadius: radius.md, justifyContent: 'center', minHeight: 54, paddingHorizontal: spacing.lg },
   saveButtonText: { color: colors.textOnDark, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
   pressed: { opacity: 0.74 },
 });
