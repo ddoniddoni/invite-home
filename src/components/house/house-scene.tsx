@@ -128,10 +128,10 @@ export function HouseScene({
           { aspectRatio: layout.viewBox.width / layout.viewBox.height },
         ]}
       >
-        <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <View style={[StyleSheet.absoluteFill, styles.buildingLayer]}>
           <HouseBuilding houseType={houseType} />
         </View>
-        <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+        <View style={[StyleSheet.absoluteFill, styles.windowLayer]}>
           {slots.map((slot) => (
             <SlotWindow
               currentUserId={currentUserId}
@@ -170,6 +170,12 @@ const styles = StyleSheet.create({
   },
   scene: {
     width: '100%',
+  },
+  buildingLayer: {
+    pointerEvents: 'none',
+  },
+  windowLayer: {
+    pointerEvents: 'box-none',
   },
   legend: {
     alignItems: 'center',

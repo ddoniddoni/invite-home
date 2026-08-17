@@ -49,7 +49,7 @@ function DetachedFacade() {
 
 export function HouseBuilding({ houseType }: HouseBuildingProps) {
   return (
-    <Svg accessibilityElementsHidden height="100%" viewBox="0 0 320 420" width="100%">
+    <Svg accessible={false} height="100%" viewBox="0 0 320 420" width="100%">
       <Defs>
         <LinearGradient id="ground" x1="0" x2="0" y1="0" y2="1">
           <Stop offset="0" stopColor={colors.buildingShadow} stopOpacity="0.04" />

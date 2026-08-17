@@ -99,7 +99,7 @@ function WindowGraphic({
   const glyphColor = lightOn ? colors.textPrimary : colors.textOnDark;
 
   return (
-    <Svg accessibilityElementsHidden height="100%" viewBox="0 0 100 120" width="100%">
+    <Svg accessible={false} height="100%" viewBox="0 0 100 120" width="100%">
       <Rect fill={colors.windowFrame} height="103" rx="8" width="88" x="6" y="6" />
       <Rect fill={fill} height="87" rx="4" width="72" x="14" y="14" />
       <Line opacity={0.42} stroke={colors.windowFrame} strokeWidth="3" x1="50" x2="50" y1="15" y2="100" />
@@ -175,7 +175,7 @@ export function WindowUnit({
 
   const content = (
     <>
-      <View pointerEvents="none" style={styles.graphic}>
+      <View style={[styles.graphic, styles.graphicLayer]}>
         <WindowGraphic
           activityState={activityState}
           hasUnreadNoteForMe={hasUnreadNoteForMe}
@@ -218,8 +218,8 @@ export function EmptyWindowUnit({ isOwner, onPress, slot, style }: EmptyWindowUn
   const label = isOwner ? `빈 ${slot}번 방, 친구 초대하기` : `빈 ${slot}번 방`;
 
   const graphic = (
-    <View pointerEvents="none" style={styles.graphic}>
-      <Svg accessibilityElementsHidden height="100%" viewBox="0 0 100 120" width="100%">
+    <View style={[styles.graphic, styles.graphicLayer]}>
+      <Svg accessible={false} height="100%" viewBox="0 0 100 120" width="100%">
         <Rect fill={colors.windowFrame} height="103" rx="8" width="88" x="6" y="6" />
         <Rect
           fill={colors.windowOff}
@@ -270,6 +270,9 @@ const styles = StyleSheet.create({
   graphic: {
     aspectRatio: 100 / 120,
     width: '100%',
+  },
+  graphicLayer: {
+    pointerEvents: 'none',
   },
   nickname: {
     color: colors.textOnDark,
