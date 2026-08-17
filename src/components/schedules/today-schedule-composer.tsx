@@ -23,6 +23,7 @@ import { colors, radius, spacing } from '@/theme/tokens';
 import { fontSize, fontWeight, lineHeight } from '@/theme/typography';
 
 export type TodayScheduleComposerProps = {
+  initialValue?: TodayScheduleFormValues;
   onClose: () => void;
   onSave: (value: TodayScheduleFormValues) => Promise<void>;
 };
@@ -66,15 +67,16 @@ function VisibilityChoice({ isDisabled, isSelected, onPress, visibility }: Visib
   );
 }
 
-export function TodayScheduleComposer({ onClose, onSave }: TodayScheduleComposerProps) {
+export function TodayScheduleComposer({ initialValue, onClose, onSave }: TodayScheduleComposerProps) {
   const {
     control,
     formState: { errors, isSubmitting },
     handleSubmit,
   } = useForm<TodayScheduleFormValues>({
-    defaultValues: initialSchedule,
+    defaultValues: initialValue ?? initialSchedule,
     resolver: zodResolver(todayScheduleFormSchema),
   });
+  const isEditing = initialValue !== undefined;
   const submitSchedule = (value: TodayScheduleFormValues) => onSave(value);
 
   return (
@@ -82,8 +84,8 @@ export function TodayScheduleComposer({ onClose, onSave }: TodayScheduleComposer
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoidingView}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.eyebrow}>TODAY, AT HOME</Text>
-            <Text accessibilityRole="header" style={styles.title}>오늘 일정</Text>
+            <Text style={styles.eyebrow}>{isEditing ? 'REFINE TODAY' : 'TODAY, AT HOME'}</Text>
+            <Text accessibilityRole="header" style={styles.title}>{isEditing ? '오늘 일정 수정' : '오늘 일정'}</Text>
           </View>
           <Pressable
             accessibilityLabel="오늘 일정 작성 닫기"
@@ -188,14 +190,16 @@ export function TodayScheduleComposer({ onClose, onSave }: TodayScheduleComposer
           </View>
 
           <Pressable
-            accessibilityLabel="오늘 일정 저장"
+            accessibilityLabel={isEditing ? '오늘 일정 수정 저장' : '오늘 일정 저장'}
             accessibilityRole="button"
             accessibilityState={{ disabled: isSubmitting }}
             disabled={isSubmitting}
             onPress={handleSubmit(submitSchedule)}
             style={({ pressed }) => [styles.saveButton, pressed && !isSubmitting ? styles.pressed : null]}
           >
-            <Text style={styles.saveButtonText}>{isSubmitting ? '저장 중…' : '오늘 일정 저장'}</Text>
+            <Text style={styles.saveButtonText}>
+              {isSubmitting ? '저장 중…' : isEditing ? '오늘 일정 수정 저장' : '오늘 일정 저장'}
+            </Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

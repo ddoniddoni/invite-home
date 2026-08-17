@@ -22,4 +22,35 @@ describe('TodayScheduleComposer', () => {
       });
     });
   });
+
+  it('기존 오늘 일정 값을 채워 수정 결과로 전달한다', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    await render(
+      <TodayScheduleComposer
+        initialValue={{
+          title: '저녁 산책',
+          startTime: '20:30',
+          endTime: '21:10',
+          visibility: 'house',
+        }}
+        onClose={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    expect(screen.getByText('오늘 일정 수정')).toBeTruthy();
+    expect(screen.getByLabelText('오늘 일정 제목').props.value).toBe('저녁 산책');
+    await fireEvent.changeText(screen.getByLabelText('오늘 일정 제목'), '친구와 저녁');
+    await fireEvent.press(screen.getByRole('radio', { name: '나만 보기' }));
+    await fireEvent.press(screen.getByRole('button', { name: '오늘 일정 수정 저장' }));
+
+    await waitFor(() => {
+      expect(onSave).toHaveBeenCalledWith({
+        title: '친구와 저녁',
+        startTime: '20:30',
+        endTime: '21:10',
+        visibility: 'private',
+      });
+    });
+  });
 });

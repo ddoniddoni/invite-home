@@ -14,18 +14,22 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { activityStateLabels } from '@/features/status/presentation';
+import { findOverlappingRepeatingSchedules } from '@/features/schedules/schedule-overlap';
 import { weekdayLabels, weekdayOrder } from '@/features/schedules/presentation';
 import {
   scheduleFormSchema,
   type ScheduleFormValues,
 } from '@/features/schedules/schedule.schema';
+import type { RepeatingSchedulePreview } from '@/features/schedules/types';
 import { activityStateValues } from '@/features/status/status.schema';
 import { colors, radius, spacing } from '@/theme/tokens';
 import { fontSize, fontWeight, lineHeight } from '@/theme/typography';
 
 export type ScheduleComposerProps = {
+  initialValue?: ScheduleFormValues;
   onClose: () => void;
   onSave: (value: ScheduleFormValues) => Promise<void>;
+  overlapSchedules?: readonly RepeatingSchedulePreview[];
 };
 
 const initialSchedule: ScheduleFormValues = {
@@ -42,29 +46,42 @@ function FieldError({ message }: { message?: string }) {
   return message ? <Text accessibilityRole="alert" style={styles.fieldError}>{message}</Text> : null;
 }
 
-export function ScheduleComposer({ onClose, onSave }: ScheduleComposerProps) {
+export function ScheduleComposer({ initialValue, onClose, onSave, overlapSchedules }: ScheduleComposerProps) {
   const {
     control,
     formState: { errors, isSubmitting },
     handleSubmit,
   } = useForm<ScheduleFormValues>({
-    defaultValues: initialSchedule,
+    defaultValues: initialValue ?? initialSchedule,
     resolver: zodResolver(scheduleFormSchema),
   });
-  const [lightOn, enabled] = useWatch({
+  const isEditing = initialValue !== undefined;
+  const [daysOfWeek, startTime, endTime, lightOn, enabled] = useWatch({
     control,
     defaultValue: initialSchedule,
-    name: ['lightOn', 'enabled'] as const,
+    name: ['daysOfWeek', 'startTime', 'endTime', 'lightOn', 'enabled'] as const,
   });
   const submitSchedule = (value: ScheduleFormValues) => onSave(value);
+  const overlaps = findOverlappingRepeatingSchedules(
+    { daysOfWeek, endTime, isEnabled: enabled, startTime },
+    overlapSchedules ?? [],
+  );
+  const overlapTitle = overlaps.length === 0
+    ? '겹쳐도 저장할 수 있어요'
+    : overlaps.length === 1
+      ? `${overlaps[0].title}과 시간이 겹쳐요`
+      : `${overlaps[0].title} 외 ${overlaps.length - 1}개와 시간이 겹쳐요`;
+  const priorityDescription = isEditing
+    ? '겹치는 시간대에는 더 높은 우선순위가 적용돼요. 수정해도 기존 우선순위는 유지돼요.'
+    : '겹치는 시간대에는 더 높은 우선순위가 적용돼요. 새 규칙에는 가장 높은 우선순위가 자동으로 매겨져요.';
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.keyboardAvoidingView}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.eyebrow}>NEW RHYTHM</Text>
-            <Text accessibilityRole="header" style={styles.title}>반복 스케줄</Text>
+            <Text style={styles.eyebrow}>{isEditing ? 'REFINE RHYTHM' : 'NEW RHYTHM'}</Text>
+            <Text accessibilityRole="header" style={styles.title}>{isEditing ? '반복 스케줄 수정' : '반복 스케줄'}</Text>
           </View>
           <Pressable
             accessibilityLabel="스케줄 작성 닫기"
@@ -260,20 +277,23 @@ export function ScheduleComposer({ onClose, onSave }: ScheduleComposerProps) {
             />
           </View>
 
-          <View accessible accessibilityLabel="우선순위 안내" style={styles.priorityNotice}>
-            <Text style={styles.priorityTitle}>겹침은 그대로 저장해요</Text>
-            <Text style={styles.priorityDescription}>새 스케줄이 같은 시간대에서는 더 높은 우선순위로 적용돼요.</Text>
+          <View accessibilityLabel="우선순위 안내" style={styles.priorityNotice}>
+            <Text accessibilityRole={overlaps.length > 0 ? 'alert' : undefined} style={styles.priorityTitle}>{overlapTitle}</Text>
+            <Text style={styles.priorityDescription}>{priorityDescription}</Text>
+            {overlaps.length > 0 ? <Text style={styles.overlapDetail}>저장해도 기존 규칙은 그대로 유지돼요.</Text> : null}
           </View>
 
           <Pressable
-            accessibilityLabel="반복 스케줄 저장"
+            accessibilityLabel={isEditing ? '반복 스케줄 수정 저장' : '반복 스케줄 저장'}
             accessibilityRole="button"
             accessibilityState={{ disabled: isSubmitting }}
             disabled={isSubmitting}
             onPress={handleSubmit(submitSchedule)}
             style={({ pressed }) => [styles.saveButton, pressed && !isSubmitting ? styles.pressed : null]}
           >
-            <Text style={styles.saveButtonText}>{isSubmitting ? '저장 중…' : '반복 스케줄 저장'}</Text>
+            <Text style={styles.saveButtonText}>
+              {isSubmitting ? '저장 중…' : isEditing ? '반복 스케줄 수정 저장' : '반복 스케줄 저장'}
+            </Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -328,6 +348,7 @@ const styles = StyleSheet.create({
   priorityNotice: { backgroundColor: colors.surface, borderColor: colors.border, borderRadius: radius.md, borderWidth: 1, gap: spacing.xs, padding: spacing.md },
   priorityTitle: { color: colors.accentPlum, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
   priorityDescription: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.caption },
+  overlapDetail: { color: colors.textSecondary, fontSize: fontSize.caption, lineHeight: lineHeight.caption },
   fieldError: { color: colors.danger, fontSize: fontSize.caption, fontWeight: fontWeight.medium, lineHeight: lineHeight.caption },
   saveButton: { alignItems: 'center', backgroundColor: colors.success, borderRadius: radius.md, justifyContent: 'center', minHeight: 52, paddingHorizontal: spacing.lg },
   saveButtonText: { color: colors.textOnDark, fontSize: fontSize.body, fontWeight: fontWeight.bold, lineHeight: lineHeight.body },
