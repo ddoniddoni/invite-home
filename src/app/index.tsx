@@ -9,8 +9,9 @@ import { ResidentDetailModal } from '@/components/house/resident-detail-modal';
 import { BottomTabBar } from '@/components/navigation/bottom-tab-bar';
 import { StatusEditor } from '@/components/status/status-editor';
 import type { HouseWindowMember } from '@/features/houses/types';
-import { noteTypeLabels } from '@/features/notes/presentation';
+import { useLocalNotes } from '@/features/notes/local-note-store';
 import type { NoteFormValues } from '@/features/notes/note.schema';
+import { noteTypeLabels } from '@/features/notes/presentation';
 import { useLocalSchedules } from '@/features/schedules/local-schedule-store';
 import { toStatusSchedules } from '@/features/schedules/status-schedules';
 import { useLocalStatus } from '@/features/status/local-status-store';
@@ -57,6 +58,7 @@ export default function IndexRoute() {
   const [selection, setSelection] = useState('나의 현재 상태');
   const { currentStatus, saveStatus } = useLocalStatus();
   const { repeatingSchedules } = useLocalSchedules();
+  const { sendNote } = useLocalNotes();
   const [isStatusEditorVisible, setIsStatusEditorVisible] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [noteRecipientId, setNoteRecipientId] = useState<string | null>(null);
@@ -128,6 +130,7 @@ export default function IndexRoute() {
       return;
     }
 
+    sendNote({ recipientNickname: noteRecipient.nickname, value });
     setSelection(`${noteRecipient.nickname}에게 ${noteTypeLabels[value.type]}를 보냈어요.`);
     setNoteRecipientId(null);
   };
