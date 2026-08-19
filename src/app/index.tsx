@@ -58,12 +58,15 @@ export default function IndexRoute() {
   const [selection, setSelection] = useState('나의 현재 상태');
   const { currentStatus, saveStatus } = useLocalStatus();
   const { repeatingSchedules } = useLocalSchedules();
-  const { sendNote } = useLocalNotes();
+  const { notes, sendNote } = useLocalNotes();
   const [isStatusEditorVisible, setIsStatusEditorVisible] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [noteRecipientId, setNoteRecipientId] = useState<string | null>(null);
   const capacity = fixtureHouse.capacity;
   const currentMember = fixtureMembers.find((member) => member.id === fixtureCurrentUserId);
+  const hasUnreadReceivedNote = notes.some(
+    (note) => note.direction === 'received' && note.isUnread,
+  );
   const effectiveStatus = useEffectiveStatus({
     events: fixtureStatusEvents,
     houseTimeZone: fixtureHouse.timeZone,
@@ -88,8 +91,9 @@ export default function IndexRoute() {
           moodKey: effectiveStatus.moodKey,
           moodLabel: effectiveStatus.moodLabel,
           statusMessage: effectiveStatus.statusMessage,
+          hasUnreadNoteForMe: hasUnreadReceivedNote,
         }
-      : member,
+      : { ...member, hasUnreadNoteForMe: false },
   );
   const selectedMember = members.find((member) => member.id === selectedMemberId) ?? null;
   const noteRecipient = members.find((member) => member.id === noteRecipientId) ?? null;

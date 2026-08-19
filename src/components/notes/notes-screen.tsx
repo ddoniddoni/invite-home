@@ -9,6 +9,7 @@ import { colors, radius, spacing } from '@/theme/tokens';
 import { fontSize, fontWeight, lineHeight } from '@/theme/typography';
 
 export type NotesScreenProps = {
+  onReadNote?: (noteId: string) => void;
   notes: readonly NotePreview[];
 };
 
@@ -28,17 +29,21 @@ function EnvelopeIcon({ color }: { color: string }) {
   );
 }
 
-function NoteCard({ direction, note }: { direction: NoteDirection; note: NotePreview }) {
+type NoteCardProps = {
+  direction: NoteDirection;
+  note: NotePreview;
+  onReadNote?: (noteId: string) => void;
+};
+
+function NoteCard({ direction, note, onReadNote }: NoteCardProps) {
   const typeLabel = noteTypeLabels[note.type];
   const sender = direction === 'received' ? note.counterpartNickname : `나 → ${note.counterpartNickname}`;
   const isMemo = note.type === 'memo';
+  const canMarkRead = direction === 'received' && note.isUnread && onReadNote !== undefined;
+  const accessibilityLabel = `${note.counterpartNickname}의 ${typeLabel}. ${note.isUnread ? '읽지 않음.' : '읽음.'} ${note.body}`;
 
-  return (
-    <View
-      accessibilityLabel={`${note.counterpartNickname}의 ${typeLabel}. ${note.isUnread ? '읽지 않음.' : '읽음.'} ${note.body}`}
-      accessible
-      style={[styles.noteCard, note.isUnread ? styles.unreadNoteCard : null]}
-    >
+  const content = (
+    <>
       <View style={styles.noteMeta}>
         <View style={styles.senderGroup}>
           <View style={[styles.noteIcon, isMemo ? styles.noteIconMemo : styles.noteIconGreeting]}>
@@ -58,11 +63,35 @@ function NoteCard({ direction, note }: { direction: NoteDirection; note: NotePre
           {note.isUnread ? '읽지 않음' : '읽음'}
         </Text>
       </View>
+    </>
+  );
+
+  if (canMarkRead) {
+    return (
+      <Pressable
+        accessibilityHint="메모를 열어 읽음으로 표시합니다."
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole="button"
+        onPress={() => onReadNote(note.id)}
+        style={({ pressed }) => [styles.noteCard, styles.unreadNoteCard, pressed ? styles.pressed : null]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View
+      accessibilityLabel={accessibilityLabel}
+      accessible
+      style={[styles.noteCard, note.isUnread ? styles.unreadNoteCard : null]}
+    >
+      {content}
     </View>
   );
 }
 
-export function NotesScreen({ notes }: NotesScreenProps) {
+export function NotesScreen({ notes, onReadNote }: NotesScreenProps) {
   const [direction, setDirection] = useState<NoteDirection>('received');
   const visibleNotes = notes.filter((note) => note.direction === direction);
 
@@ -111,7 +140,9 @@ export function NotesScreen({ notes }: NotesScreenProps) {
           />
         ) : (
           <View style={styles.noteList}>
-            {visibleNotes.map((note) => <NoteCard direction={direction} key={note.id} note={note} />)}
+            {visibleNotes.map((note) => (
+              <NoteCard direction={direction} key={note.id} note={note} onReadNote={onReadNote} />
+            ))}
           </View>
         )}
       </ScrollView>

@@ -16,6 +16,7 @@ export type LocalSentNoteInput = {
 };
 
 type LocalNoteStoreValue = {
+  markNoteRead: (noteId: string) => void;
   notes: readonly NotePreview[];
   sendNote: (input: LocalSentNoteInput) => void;
 };
@@ -28,6 +29,15 @@ const LocalNoteContext = createContext<LocalNoteStoreValue | null>(null);
 
 export function LocalNoteProvider({ children, initialNotes }: LocalNoteProviderProps) {
   const [notes, setNotes] = useState<readonly NotePreview[]>(initialNotes);
+  const markNoteRead = useCallback((noteId: string) => {
+    setNotes((currentNotes) =>
+      currentNotes.map((note) =>
+        note.id === noteId && note.direction === 'received' && note.isUnread
+          ? { ...note, isUnread: false }
+          : note,
+      ),
+    );
+  }, []);
   const sendNote = useCallback((input: LocalSentNoteInput) => {
     setNotes((currentNotes) => [
       {
@@ -43,8 +53,8 @@ export function LocalNoteProvider({ children, initialNotes }: LocalNoteProviderP
     ]);
   }, []);
   const value = useMemo(
-    () => ({ notes, sendNote }),
-    [notes, sendNote],
+    () => ({ markNoteRead, notes, sendNote }),
+    [markNoteRead, notes, sendNote],
   );
 
   return <LocalNoteContext.Provider value={value}>{children}</LocalNoteContext.Provider>;

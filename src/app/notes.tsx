@@ -7,12 +7,12 @@ import { useLocalNotes } from '@/features/notes/local-note-store';
 import { colors } from '@/theme/tokens';
 
 export default function NotesRoute() {
-  const { notes } = useLocalNotes();
+  const { markNoteRead, notes } = useLocalNotes();
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <NotesScreen notes={notes} />
+        <NotesScreen notes={notes} onReadNote={markNoteRead} />
       </View>
       <BottomTabBar />
     </SafeAreaView>

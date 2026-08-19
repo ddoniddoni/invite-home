@@ -16,4 +16,15 @@ describe('NotesScreen', () => {
     expect(screen.getByText('나 → 민수')).toBeTruthy();
     expect(screen.getByText('회의 끝나면 연락 줘.')).toBeTruthy();
   });
+
+  it('읽지 않은 받은 메모를 열면 읽음 처리 콜백을 호출한다', async () => {
+    const onReadNote = jest.fn();
+    await render(<NotesScreen notes={fixtureNotes} onReadNote={onReadNote} />);
+
+    await fireEvent.press(screen.getByRole('button', {
+      name: '민수의 메모. 읽지 않음. 오늘도 수고했어. 푹 쉬어!',
+    }));
+
+    expect(onReadNote).toHaveBeenCalledWith('fixture-note-minsu-1');
+  });
 });
